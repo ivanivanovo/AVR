@@ -1,0 +1,621 @@
+
+\ ***** Specify Device
+\ .device ATtiny2313
+decimal
+\ *****************************************************************************
+\  Data Memory Declarations
+\ *****************************************************************************
+0x 5f    CONSTANT    IOEND  
+0x 60    CONSTANT    SRAM_START  
+0x DF    CONSTANT    RAMEND      \ Highest internal data memory (SRAM) address.
+                                \ (128 Bytes RAM + IO + REG)
+0x 7F    CONSTANT    E2END       \ Last EEPROM Location
+0x 7F    CONSTANT    EEPROMEND   \ Highest EEPROM address.
+                                \ (128 Bytes)
+0       CONSTANT    XRAMEND     \ Last External RAM Location
+7       CONSTANT    EEADRBITS   \ no. of bits in EEPROM address register
+128     CONSTANT    RAM_SIZE
+\ *****************************************************************************
+\  Program Memory Declarations
+\ *****************************************************************************
+0x 3FF   CONSTANT    FLASHEND    \  Highest program memory (flash) address
+                                \ (When addressed as 16 bit words)
+                                \ ( 1024 words , 2K byte )
+\ **** Page Size ****
+16     CONSTANT    PAGESIZE     \ number of WORDS in a Flash page
+4      CONSTANT    EEPAGESIZE   \ number of BYTE in an EEPROM page
+\ Minimum Wait Delay before Writing the Next Flash or EEPROM Location (ms)
+5 CONSTANT TwdFlash
+4 CONSTANT TwdEEPROM
+9 CONSTANT TwdErase
+5 CONSTANT TwdFuse
+
+\ ***** Lock Bits
+\ default #   TYPE    name
+    1     0   LOCK:    LB1
+    1     1   LOCK:    LB2
+
+\ ***** Fuse Bits
+\ default #   TYPE    name
+   \ low byte
+0  0 FUSE:    CKSEL0      
+0  1 FUSE:    CKSEL1
+1  2 FUSE:    CKSEL2
+0  3 FUSE:    CKSEL3
+0  4 FUSE:    SUT0
+1  5 FUSE:    SUT1
+1  6 FUSE:    CKOUT
+0  7 FUSE:    CKDIV8
+   \ high byte
+1  8 FUSE:    RSTDISBL
+1  9 FUSE:    BODLEVEL0
+1 10 FUSE:    BODLEVEL1
+1 11 FUSE:    BODLEVEL2
+1 12 FUSE:    WDTON
+0 13 FUSE:    SPIEN
+1 14 FUSE:    EESAVE
+1 15 FUSE:    DWEN
+  \ Extended Fuse Byte
+1 16 FUSE:    SELFPRGEN
+
+\ *****************************************************************************
+\ **** Interrupt Vectors ****        
+\ *****************************************************************************
+
+0x 002   CONSTANT    INT0addr               \ External Interrupt0
+0x 004   CONSTANT    INT1addr               \ External Interrupt1
+0x 006   CONSTANT    ICP1addr               \ Input capture interrupt 1
+0x 008   CONSTANT    OC1Aaddr               \ Timer/Counter1 Compare Match A
+0x 00A   CONSTANT    OVF1addr               \ Overflow1 Interrupt
+0x 00C   CONSTANT    OVF0addr               \ Overflow0 Interrupt
+0x 00E   CONSTANT    URXC0addr              \ USART0 RX Complete Interrupt
+0x 010   CONSTANT    UDRE0addr              \ USART0 Data Register Empty Interrupt
+0x 012   CONSTANT    UTXC0addr              \ USART0 TX Complete Interrupt
+0x 014   CONSTANT    ACIaddr                \ Analog Comparator Interrupt
+0x 016   CONSTANT    PCINTaddr              \ Pin Change Interrupt
+0x 018   CONSTANT    OC1Baddr               \ Timer/Counter1 Compare Match B
+0x 01A   CONSTANT    OC0Aaddr               \ Timer/Counter0 Compare Match A
+0x 01C   CONSTANT    OC0Baddr               \ Timer/Counter0 Compare Match B
+0x 01E   CONSTANT    USI_STARTaddr          \ USI start interrupt
+0x 020   CONSTANT    USI_OVFaddr            \ USI overflow interrupt
+0x 022   CONSTANT    ERDYaddr               \ EEPROM write complete
+0x 024   CONSTANT    WDTaddr                \ Watchdog Timer Interrupt
+\  for compatibility purpose
+0x 00E   CONSTANT    URXCaddr
+0x 010   CONSTANT    UDREaddr
+0x 012   CONSTANT    UTXCaddr
+
+0x 026   CONSTANT    ROM_FREE       \ Стартовый адрес кода
+
+
+\ *****************************************************************************
+\  I/O Register Definitions
+\ *****************************************************************************
+
+0x 3F  PORT:    SREG      
+0x 3D  PORT:    SPL       
+0x 3D  PORT:    SP       
+0x 3C  PORT:    OCR0B     
+0x 3B  PORT:    GIMSK     
+0x 3A  PORT:    EIFR      
+0x 3A  PORT:    GIFR          \  for compatibility purpose
+0x 39  PORT:    TIMSK          
+0x 38  PORT:    TIFR      
+0x 37  PORT:    SPMCSR    
+0x 36  PORT:    OCR0A     
+0x 35  PORT:    MCUCR     
+0x 34  PORT:    MCUSR     
+0x 33  PORT:    TCCR0B    
+0x 33  PORT:    TCCR0         \  for compatibility purpose
+0x 32  PORT:    TCNT0     
+0x 31  PORT:    OSCCAL    
+0x 30  PORT:    TCCR0A    
+0x 2F  PORT:    TCCR1A    
+0x 2E  PORT:    TCCR1B    
+0x 2D  PORT:    TCNT1H    
+0x 2C  PORT:    TCNT1L    
+0x 2B  PORT:    OCR1AH    
+0x 2A  PORT:    OCR1AL    
+0x 29  PORT:    OCR1BH    
+0x 28  PORT:    OCR1BL    
+0x 26  PORT:    CLKPR     
+0x 25  PORT:    ICR1H     
+0x 24  PORT:    ICR1L     
+0x 23  PORT:    SFIOR     
+0x 22  PORT:    TCCR1C    
+0x 21  PORT:    WDTCSR     
+0x 20  PORT:    PCMSK     
+0x 1E  PORT:    EEAR          \  for compatibility purpose
+0x 1E  PORT:    EEARL     
+0x 1D  PORT:    EEDR      
+0x 1C  PORT:    EECR      
+0x 1B  PORT:    PORTA     
+0x 1A  PORT:    DDRA      
+0x 19  PORT:    PINA      
+0x 18  PORT:    PORTB     
+0x 17  PORT:    DDRB      
+0x 16  PORT:    PINB      
+0x 15  PORT:    GPIOR2    
+0x 14  PORT:    GPIOR1    
+0x 13  PORT:    GPIOR0    
+0x 12  PORT:    PORTD     
+0x 11  PORT:    DDRD      
+0x 10  PORT:    PIND      
+0x 0F  PORT:    USIDR     
+0x 0E  PORT:    USISR     
+0x 0D  PORT:    USICR     
+0x 0C  PORT:    UDR       
+0x 0B  PORT:    UCSRA     
+0x 0B  PORT:    USR           \  for compatibility purpose
+0x 0A  PORT:    UCSRB     
+0x 0A  PORT:    UCR           \  for compatibility purpose
+0x 09  PORT:    UBRRL     
+0x 09  PORT:    UBRR          \  for compatibility purpose
+0x 08  PORT:    ACSR      
+0x 03  PORT:    UCSRC     
+0x 02  PORT:    UBRRH     
+0x 01  PORT:    DIDR      
+
+    
+\ *****************************************************************************
+\  Bit Definitions
+\ *****************************************************************************
+
+ BitsIn SPL \ ********
+ 7  #BitIs   SP7         
+ 6  #BitIs   SP6         
+ 5  #BitIs   SP5         
+ 4  #BitIs   SP4         
+ 3  #BitIs   SP3         
+ 2  #BitIs   SP2         
+ 1  #BitIs   SP1         
+ 0  #BitIs   SP0         
+    
+ BitsIn GIMSK \ ******
+ 7  #BitIs   INT1        
+ 6  #BitIs   INT0        
+ 5  #BitIs   PCIE        
+    
+ BitsIn EIFR \ *******
+ 7  #BitIs   INTF1       
+ 6  #BitIs   INTF0       
+ 5  #BitIs   PCIF        
+    
+ BitsIn TIMSK \ ******
+ 7  #BitIs   TOIE1       
+ 6  #BitIs   OCIE1A      
+ 5  #BitIs   OCIE1B      
+ 3  #BitIs   ICIE1       
+ 2  #BitIs   OCIE0B      
+ 1  #BitIs   TOIE0       
+ 0  #BitIs   OCIE0A      
+ 3  #BitIs   TICIE          \  for compatibility purpose
+    
+ BitsIn TIFR \ *******
+ 7  #BitIs   TOV1        
+ 6  #BitIs   OCF1A       
+ 5  #BitIs   OCF1B       
+ 3  #BitIs   ICF1        
+ 2  #BitIs   OCF0B       
+ 1  #BitIs   TOV0        
+ 0  #BitIs   OCF0A       
+    
+ BitsIn SPMCSR \ *****
+ 4  #BitIs   CTPB        
+ 3  #BitIs   RFLB        
+ 2  #BitIs   PGWRT       
+ 1  #BitIs   PGERS       
+ 0  #BitIs   SPMEN       
+    
+ BitsIn MCUCR \ ******
+ 7  #BitIs   PUD         
+ 6  #BitIs   SM1         
+ 5  #BitIs   SE          
+ 4  #BitIs   SM0         
+ 3  #BitIs   ISC11       
+ 2  #BitIs   ISC10       
+ 1  #BitIs   ISC01       
+ 0  #BitIs   ISC00       
+ 4  #BitIs   SM             \  for compatibility purpose
+
+ BitsIn MCUSR \ ******
+ 3  #BitIs   WDRF        
+ 2  #BitIs   BORF        
+ 1  #BitIs   EXTRF       
+ 0  #BitIs   PORF        
+    
+ BitsIn TCCR0B \ *****
+ 7  #BitIs   FOC0A       
+ 6  #BitIs   FOC0B       
+ 3  #BitIs   WGM02       
+ 2  #BitIs   CS02        
+ 1  #BitIs   CS01        
+ 0  #BitIs   CS00        
+    
+ BitsIn OSCCAL \ *****
+ 6  #BitIs   CAL6        
+ 5  #BitIs   CAL5        
+ 4  #BitIs   CAL4        
+ 3  #BitIs   CAL3        
+ 2  #BitIs   CAL2        
+ 1  #BitIs   CAL1        
+ 0  #BitIs   CAL0        
+    
+ BitsIn TCCR0A \ *****
+ 7  #BitIs   COM0A1      
+ 6  #BitIs   COM0A0      
+ 5  #BitIs   COM0B1      
+ 4  #BitIs   COM0B0      
+ 1  #BitIs   WGM01       
+ 0  #BitIs   WGM00       
+    
+ BitsIn TCCR1A \ *****
+ 7  #BitIs   COM1A1      
+ 6  #BitIs   COM1A0      
+ 5  #BitIs   COM1B1      
+ 4  #BitIs   COM1B0      
+ 1  #BitIs   WGM11       
+ 0  #BitIs   WGM10       
+ 1  #BitIs   PWM11          \  for compatibility purpose
+ 0  #BitIs   PWM10          \  for compatibility purpose
+   
+ BitsIn TCCR1B \ *****
+ 7  #BitIs   ICNC1       
+ 6  #BitIs   ICES1       
+ 4  #BitIs   WGM13       
+ 3  #BitIs   WGM12       
+ 2  #BitIs   CS12        
+ 1  #BitIs   CS11        
+ 0  #BitIs   CS10        
+ 3  #BitIs   CTC1           \  for compatibility purpose
+    
+ BitsIn CLKPR \ ******
+ 7  #BitIs   CLKPCE      
+ 3  #BitIs   CLKPS3      
+ 2  #BitIs   CLKPS2      
+ 1  #BitIs   CLKPS1      
+ 0  #BitIs   CLKPS0      
+    
+ BitsIn SFIOR \ ******
+ 0  #BitIs   PSR10       
+   
+ BitsIn TCCR1C \ *****
+ 7  #BitIs   FOC1A       
+ 6  #BitIs   FOC1B       
+                
+ BitsIn WDTCSR \ *****
+ 7  #BitIs   WDIF
+ 6  #BitIs   WDIE
+ 5  #BitIs   WDP3
+ 4  #BitIs   WDCE
+ 3  #BitIs   WDE
+ 2  #BitIs   WDP2
+ 1  #BitIs   WDP1
+ 0  #BitIs   WDP0
+ 4  #BitIs   WDTOE
+
+ BitsIn PCMSK \ ******
+ 7  #BitIs   PCINT7
+ 6  #BitIs   PCINT6
+ 5  #BitIs   PCINT5
+ 4  #BitIs   PCINT4
+ 3  #BitIs   PCINT3
+ 2  #BitIs   PCINT2
+ 1  #BitIs   PCINT1
+ 0  #BitIs   PCINT0
+
+ BitsIn EECR \ *******
+ 5  #BitIs   EEPM1
+ 4  #BitIs   EEPM0
+ 3  #BitIs   EERIE
+ 2  #BitIs   EEMPE
+ 1  #BitIs   EEPE
+ 0  #BitIs   EERE
+\  Kept for backward compatibility
+ 2  #BitIs   EEMWE
+ 1  #BitIs   EEWE
+
+
+ BitsIn PORTA \ ******
+ 2  #BitIs   PORTA2
+ 1  #BitIs   PORTA1
+ 0  #BitIs   PORTA0
+
+ BitsIn DDRA \ *******
+ 2  #BitIs   DDA2
+ 1  #BitIs   DDA1
+ 0  #BitIs   DDA0
+
+ BitsIn PINA \ *******
+ 2  #BitIs   PINA2
+ 1  #BitIs   PINA1
+ 0  #BitIs   PINA0
+
+ BitsIn PORTB \ ******
+ 7  #BitIs   PORTB7
+ 6  #BitIs   PORTB6
+ 5  #BitIs   PORTB5
+ 4  #BitIs   PORTB4
+ 3  #BitIs   PORTB3
+ 2  #BitIs   PORTB2
+ 1  #BitIs   PORTB1
+ 0  #BitIs   PORTB0
+
+ BitsIn DDRB \ *******
+ 7  #BitIs   DDB7
+ 6  #BitIs   DDB6
+ 5  #BitIs   DDB5
+ 4  #BitIs   DDB4
+ 3  #BitIs   DDB3
+ 2  #BitIs   DDB2
+ 1  #BitIs   DDB1
+ 0  #BitIs   DDB0
+
+ BitsIn PINB \ *******
+ 7  #BitIs   PINB7
+ 6  #BitIs   PINB6
+ 5  #BitIs   PINB5
+ 4  #BitIs   PINB4
+ 3  #BitIs   PINB3
+ 2  #BitIs   PINB2
+ 1  #BitIs   PINB1
+ 0  #BitIs   PINB0
+
+ BitsIn PORTD \ ******
+ 6  #BitIs   PORTD6
+ 5  #BitIs   PORTD5
+ 4  #BitIs   PORTD4
+ 3  #BitIs   PORTD3
+ 2  #BitIs   PORTD2
+ 1  #BitIs   PORTD1
+ 0  #BitIs   PORTD0
+
+ BitsIn DDRD \ *******
+ 6  #BitIs   DDD6
+ 5  #BitIs   DDD5
+ 4  #BitIs   DDD4
+ 3  #BitIs   DDD3
+ 2  #BitIs   DDD2
+ 1  #BitIs   DDD1
+ 0  #BitIs   DDD0
+
+ BitsIn PIND \ *******
+ 6  #BitIs   PIND6
+ 5  #BitIs   PIND5
+ 4  #BitIs   PIND4
+ 3  #BitIs   PIND3
+ 2  #BitIs   PIND2
+ 1  #BitIs   PIND1
+ 0  #BitIs   PIND0
+
+ BitsIn USISR \ ******
+ 7  #BitIs   USISIF
+ 6  #BitIs   USIOIF
+ 5  #BitIs   USIPF
+ 4  #BitIs   USIDC
+ 3  #BitIs   USICNT3
+ 2  #BitIs   USICNT2
+ 1  #BitIs   USICNT1
+ 0  #BitIs   USICNT0
+
+ BitsIn USICR \ ******
+ 7  #BitIs   USISIE
+ 6  #BitIs   USIOIE
+ 5  #BitIs   USIWM1
+ 4  #BitIs   USIWM0
+ 3  #BitIs   USICS1
+ 2  #BitIs   USICS0
+ 1  #BitIs   USICLK
+ 0  #BitIs   USITC
+
+ BitsIn UCSRA \ ******
+ 7  #BitIs   RXC
+ 6  #BitIs   TXC
+ 5  #BitIs   UDRE
+ 4  #BitIs   FE
+ 3  #BitIs   DOR
+ 2  #BitIs   UPE
+ 2  #BitIs   PE             \  for compatibility purpose
+ 1  #BitIs   U2X         
+ 0  #BitIs   MPCM        
+    
+ BitsIn UCSRB \ ******
+ 7  #BitIs   RXCIE       
+ 6  #BitIs   TXCIE       
+ 5  #BitIs   UDRIE       
+ 4  #BitIs   RXEN        
+ 3  #BitIs   TXEN        
+ 2  #BitIs   UCSZ2       
+ 1  #BitIs   RXB8        
+ 0  #BitIs   TXB8        
+ 2  #BitIs   CHR9           \  for compatibility purpose
+        
+ BitsIn ACSR \ *******
+ 7  #BitIs   ACD         
+ 6  #BitIs   ACBG        
+ 5  #BitIs   ACO         
+ 4  #BitIs   ACI         
+ 3  #BitIs   ACIE        
+ 2  #BitIs   ACIC        
+ 1  #BitIs   ACIS1       
+ 0  #BitIs   ACIS0       
+    
+ BitsIn UCSRC \ ******
+ 6  #BitIs   UMSEL       
+ 5  #BitIs   UPM1        
+ 4  #BitIs   UPM0        
+ 3  #BitIs   USBS        
+ 2  #BitIs   UCSZ1       
+ 1  #BitIs   UCSZ0       
+ 0  #BitIs   UCPOL       
+    
+ BitsIn DIDR \ ******
+ 1  #BitIs   AIN1D       
+ 0  #BitIs   AIN0D       
+
+\ *****************************************************************************
+\ *****************************************************************************
+\ Полный набор инструкций 8-ми разрядных микроконтроллеров семейства AVR.
+\ Система обозначения операндов в основном совпадает с фирменной документацией,
+\ но для большей информативности и различимости, введены дополнительные.
+\ Rr    - регистр общего назначения (РОН), R[0...31]
+\ Rd    - регистр общего назначения, R[0...31]
+\ Rdr   - частный случай, когда Rd=Rr
+\ R'd   - старшие регистры, R[16...31]
+\ R"d   - чётные регистры, R[2,4,...30]
+\ R*d   - регистровые пары, R[24,26,28,30]
+\ b     - бит в РОН или порту, доступный для битовых команд
+\ sb    - бит в системном регистре SREG 
+\ k     - абсолютный адрес в пространстве ROM, всегда >0
+\ -k    - относительный адрес, может быть отрицательным
+\ (k)   - абсолютный адрес в пространстве RAM
+\ A     - адрес в пространстве ввода-вывода, 0<=A<=31 (или 32<=(k)<=63 в RAM)
+\ !K!   - байт маски, при ассемблировании инвертируется
+\ K!    - байт, константа
+
+\ ------------------------------------------------------------------------------
+\ первое opcode (последнее при поиске) в цепи - заглушка
+\ ------------------------------------------------------------------------------
+cmd: ?unknown?  ?.   ;  Opcode: ................    \ заглушка        
+\ порядок следования команд в этом списке в основном совпадает с документацией,
+\ но похожие команды должны следовать от большего числа параметров к меньшим.
+
+\ арифметические и логические операции
+cmd: ADD    Rd, Rr   ;  Opcode: 000011rdddddrrrr    \ Суммирование без переноса | Rd=Rd + Rr 
+cmd: ADC    Rd, Rr   ;  Opcode: 000111rdddddrrrr    \ Суммирование с переносом | Rd=Rd + Rr + C
+cmd: ADIW   R*d, K!  ;  Opcode: 10010110KKddKKKK    \ Сложить константу и слово | Rdh:Rdl=Rdh:Rdl + K6 
+cmd: SUB    Rd, Rr   ;  Opcode: 000110rdddddrrrr    \ Вычитание без переноса | Rd=Rd - Rr
+cmd: SUBI   R'd, K!  ;  Opcode: 0101KKKKddddKKKK    \ Вычитание константы | Rd=Rd - K8
+cmd: SBC    Rd, Rr   ;  Opcode: 000010rdddddrrrr    \ Вычитание с переносом | Rd=Rd - Rr - C
+cmd: SBCI   R'd, K!  ;  Opcode: 0100KKKKddddKKKK    \ Вычитание константы с переносом | Rd=Rd - K8 - C
+cmd: SBIW   R*d, K!  ;  Opcode: 10010111KKddKKKK    \ Вычесть константу из слова | Rdh:Rdl=Rdh:Rdl - K6
+cmd: AND    Rd, Rr   ;  Opcode: 001000rdddddrrrr    \ Логическое И | Rd=Rd · Rr
+cmd: CBR    R'd, !K! ;  Opcode: 0111KKKKddddKKKK    \ Сбросить бит (биты) в регистре | Rd=Rd · ($FF - K8)
+cmd: ANDI   R'd, K!  ;  Opcode: 0111KKKKddddKKKK    \ Логическое И с константой | Rd=Rd · K8
+cmd: OR     Rd, Rr   ;  Opcode: 001010rdddddrrrr    \ Логическое ИЛИ | Rd=Rd V Rr
+cmd: SBR    R'd, K!  ;  Opcode: 0110KKKKddddKKKK    \ Установить бит (биты) в регистре | Rd=Rd V K8
+cmd: ORI    R'd, K!  ;  Opcode: 0110KKKKddddKKKK    \ Логическое ИЛИ с константой | Rd=Rd V K8
+cmd: EOR    Rd, Rr   ;  Opcode: 001001rdddddrrrr    \ Логическое исключающее ИЛИ | Rd=Rd EOR Rr
+cmd: COM    Rd       ;  Opcode: 1001010ddddd0000    \ Побитная Инверсия | Rd=$FF - Rd
+cmd: NEG    Rd       ;  Opcode: 1001010ddddd0001    \ Изменение знака (Доп. код) | Rd=$00 - Rd
+cmd: INC    Rd       ;  Opcode: 1001010ddddd0011    \ Инкрементировать значение регистра | Rd=Rd + 1
+cmd: DEC    Rd       ;  Opcode: 1001010ddddd1010    \ Декрементировать значение регистра | Rd=Rd -1
+cmd: TST    Rdr      ;  Opcode: 001000rdddddrrrr    \ Проверка на ноль либо отрицательность | Rd=Rd · Rd
+cmd: CLR    Rdr      ;  Opcode: 001001rdddddrrrr    \ Очистить регистр | Rd=0
+cmd: SER    R'd      ;  Opcode: 11101111dddd1111    \ Установить регистр | Rd=$FF
+
+\ передача управления
+cmd: RJMP   -k       ;  Opcode: 1100kkkkkkkkkkkk    \ Относительный переход | PC=PC + k +1
+cmd: IJMP            ;  Opcode: 1001010000001001    \ Косвенный переход на (Z) | PC=Z
+cmd: RCALL  -k       ;  Opcode: 1101kkkkkkkkkkkk    \ Относительный вызов подпрограммы | STACK=PC+1, PC=PC + k + 1
+cmd: ICALL           ;  Opcode: 1001010100001001    \ Косвенный вызов (Z) | STACK=PC+1, PC=Z 
+cmd: RET             ;  Opcode: 1001010100001000    \ Возврат из подпрограммы | PC=STACK
+cmd: RETI            ;  Opcode: 1001010100011000    \ Возврат из прерывания | PC=STACK
+cmd: CPSE   Rd, Rr   ;  Opcode: 000100rdddddrrrr    \ Сравнить, пропустить если равны | if (Rd==Rr) PC=PC 2 or 3
+cmd: CP     Rd, Rr   ;  Opcode: 000101rdddddrrrr    \ Сравнить | Rd -Rr
+cmd: CPC    Rd, Rr   ;  Opcode: 000001rdddddrrrr    \ Сравнить с переносом | Rd - Rr - C
+cmd: CPI    R'd, K!  ;  Opcode: 0011KKKKddddKKKK    \ Сравнить с константой | Rd - K
+cmd: SBRC   Rr, b    ;  Opcode: 1111110rrrrr0bbb    \ Пропустить если бит в регистре очищен |if(Rr(b)==0) PC=PC + 2 or 3
+cmd: SBRS   Rr, b    ;  Opcode: 1111111rrrrr0bbb    \ Пропустить если бит в регистре установлен | if(Rr(b)==1) PC=PC + 2 or 3   
+cmd: SBIC   A,  b    ;  Opcode: 10011001AAAAAbbb    \ Пропустить если бит в порту очищен | if(I/O(P,b)==0) PC=PC + 2 or 3
+cmd: SBIS   A,  b    ;  Opcode: 10011011AAAAAbbb    \ Пропустить если бит в порту установлен | if(I/O(P,b)==1) PC=PC + 2 or 3
+cmd: BRBS   sb, -k   ;  Opcode: 111100kkkkkkksss    \ Перейти если флаг в SREG установлен | if(SREG(s)==1) PC=PC + k + 1
+cmd: BRBC   sb, -k   ;  Opcode: 111101kkkkkkksss    \ Перейти если флаг в SREG очищен | if(SREG(s)==0) PC=PC + k + 1
+cmd: BREQ   -k       ;  Opcode: 111100kkkkkkk001    \ Перейти если равно | if(Z==1) PC=PC + k + 1
+cmd: BRNE   -k       ;  Opcode: 111101kkkkkkk001    \ Перейти если не равно | if(Z==0) PC=PC + k + 1
+cmd: BRLO   -k       ;  Opcode: 111100kkkkkkk000    \ Перейти если меньше | if(C==1) PC=PC + k + 1
+cmd: BRCS   -k       ;  Opcode: 111100kkkkkkk000    \ Перейти если перенос установлен | if(C==1) PC=PC + k + 1
+cmd: BRSH   -k       ;  Opcode: 111101kkkkkkk000    \ Перейти если равно или больше | if(C==0) PC=PC + k + 1
+cmd: BRCC   -k       ;  Opcode: 111101kkkkkkk000    \ Перейти если перенос очищен | if(C==0) PC=PC + k + 1
+cmd: BRMI   -k       ;  Opcode: 111100kkkkkkk010    \ Перейти если минус | if(N==1) PC=PC + k + 1
+cmd: BRPL   -k       ;  Opcode: 111101kkkkkkk010    \ Перейти если плюс | if(N==0) PC=PC + k + 1
+cmd: BRGE   -k       ;  Opcode: 111101kkkkkkk100    \ Перейти если больше или равно (со знаком) | if(S==0) PC=PC + k + 1
+cmd: BRLT   -k       ;  Opcode: 111100kkkkkkk100    \ Перейти если меньше нуля (со знаком) | if(S==1) PC=PC + k + 1
+cmd: BRHS   -k       ;  Opcode: 111100kkkkkkk101    \ Перейти если флаг внутреннего переноса установлен | if(H==1) PC=PC + k + 1
+cmd: BRHC   -k       ;  Opcode: 111101kkkkkkk101    \ Перейти если флаг внутреннего переноса очищен | if(H==0) PC=PC + k + 1
+cmd: BRTS   -k       ;  Opcode: 111100kkkkkkk110    \ Перейти если флаг T установлен | if(T==1) PC=PC + k + 1
+cmd: BRTC   -k       ;  Opcode: 111101kkkkkkk110    \ Перейти если флаг T очищен | if(T==0) PC=PC + k + 1
+cmd: BRVS   -k       ;  Opcode: 111100kkkkkkk011    \ Перейти если флаг переполнения установлен | if(V==1) PC=PC + k + 1
+cmd: BRVC   -k       ;  Opcode: 111101kkkkkkk011    \ Перейти если флаг переполнения очищен | if(V==0) PC=PC + k + 1
+cmd: BRIE   -k       ;  Opcode: 111100kkkkkkk111    \ Перейти если прерывания разрешены | if(I==1) PC=PC + k + 1
+cmd: BRID   -k       ;  Opcode: 111101kkkkkkk111    \ Перейти если прерывания запрещены | if(I==0) PC=PC + k + 1
+
+\ перемещение данных
+cmd: MOV    Rd, Rr   ;  Opcode: 001011rdddddrrrr    \ Скопировать регистр | Rd=Rr
+cmd: MOVW   R"d, R"r ;  Opcode: 00000001ddddrrrr    \ Скопировать пару регистров | Rd+1:Rd=Rr+1:Rr, r,d чётные
+cmd: LDI    R'd, K!  ;  Opcode: 1110KKKKddddKKKK    \ Загрузить константу | Rd=K
+cmd: LD     Rd, X+   ;  Opcode: 1001000ddddd1101    \ Косвенная загрузка с пост-инкрементом | Rd=(X), X=X+1
+cmd: LD     Rd, -X   ;  Opcode: 1001000ddddd1110    \ Косвенная загрузка с пре-декрементом | X=X-1, Rd=(X)
+cmd: LD     Rd, X    ;  Opcode: 1001000ddddd1100    \ Косвенная загрузка | Rd=(X)
+cmd: LDD    Rd, Y+q  ;  Opcode: 10q0qq0ddddd1qqq    \ Косвенная загрузка со смещением | Rd=(Y+q) 
+cmd: LD     Rd, Y+   ;  Opcode: 1001000ddddd1001    \ Косвенная загрузка с пост-инкрементом | Rd=(Y), Y=Y+1
+cmd: LD     Rd, -Y   ;  Opcode: 1001000ddddd1010    \ Косвенная загрузка с пре-декрементом | Y=Y-1, Rd=(Y)
+cmd: LD     Rd, Y    ;  Opcode: 1000000ddddd1000    \ Косвенная загрузка | Rd=(Y)
+cmd: LDD    Rd, Z+q  ;  Opcode: 10q0qq0ddddd0qqq    \ Косвенная загрузка со смещением | Rd=(Z+q) 
+cmd: LD     Rd, Z+   ;  Opcode: 1001000ddddd0001    \ Косвенная загрузка с пост-инкрементом | Rd=(Z), Z=Z+1
+cmd: LD     Rd, -Z   ;  Opcode: 1001000ddddd0010    \ Косвенная загрузка с пре-декрементом | Z=Z-1, Rd=(Z)
+cmd: LD     Rd, Z    ;  Opcode: 1000000ddddd0000    \ Косвенная загрузка | Rd=(Z)
+cmd: LDS    Rd, (k)  ;  Opcode: 1001000ddddd0000 ext: kkkkkkkkkkkkkkkk \ Прямая загрузка | Rd=(k)
+cmd: ST     X+, Rr   ;  Opcode: 1001001rrrrr1101    \ Косвенное сохранение с пост-инкрементом | (X)=Rr, X=X+1
+cmd: ST     -X, Rr   ;  Opcode: 1001001rrrrr1110    \ Косвенное сохранение с пре-декрементом | X=X-1, (X)=Rr
+cmd: ST     X,  Rr   ;  Opcode: 1001001rrrrr1100    \ Косвенное сохранение | (X)=Rr
+cmd: STD    Y+q, Rr  ;  Opcode: 10q0qq1rrrrr1qqq    \ Косвенное сохранение со смещением | (Y+q)=Rr
+cmd: ST     Y+, Rr   ;  Opcode: 1001001rrrrr1001    \ Косвенное сохранение с пост-инкрементом | (Y)=Rr, Y=Y+1 
+cmd: ST     -Y, Rr   ;  Opcode: 1001001rrrrr1010    \ Косвенное сохранение с пре-декрементом | Y=Y-1, (Y)=Rr 
+cmd: ST     Y,  Rr   ;  Opcode: 1000001rrrrr1000    \ Косвенное сохранение | (Y)=Rr
+cmd: STD    Z+q, Rr  ;  Opcode: 10q0qq1rrrrr0qqq    \ Косвенное сохранение со смещением | (Z+q)=Rr
+cmd: ST     Z+, Rr   ;  Opcode: 1001001rrrrr0001    \ Косвенное сохранение с пост-инкрементом | (Z)=Rr, Z=Z+1 
+cmd: ST     -Z, Rr   ;  Opcode: 1001001rrrrr0010    \ Косвенное сохранение с пре-декрементом | Z=Z-1, (Z)=Rr
+cmd: ST     Z,  Rr   ;  Opcode: 1000001rrrrr0000    \ Косвенное сохранение | (Z)=Rr
+cmd: STS    (k), Rr  ;  Opcode: 1001001rrrrr0000 ext: kkkkkkkkkkkkkkkk \ Прямое сохранение | (k)=Rr
+cmd: LPM    Rd, Z+   ;  Opcode: 1001000ddddd0101    \ Загрузка из программной памяти с пост-инкрементом | Rd=(Z), Z=Z+1
+cmd: LPM    Rd, Z    ;  Opcode: 1001000ddddd0100    \ Загрузка из программной памяти | Rd=(Z)
+cmd: LPM             ;  Opcode: 1001010111001000    \ Загрузка из программной памяти | R0=(Z)
+cmd: SPM             ;  Opcode: 1001010111101000    \ Сохранение в программной памяти | (Z)=R1:R0
+cmd: IN     Rd, A    ;  Opcode: 10110AAdddddAAAA    \ Чтение порта | Rd=P
+cmd: OUT    A,  Rr   ;  Opcode: 10111AArrrrrAAAA    \ Запись в порт | P=Rr
+cmd: PUSH   Rr       ;  Opcode: 1001001rrrrr1111    \ Занесение регистра в стек | STACK=Rr
+cmd: POP    Rd       ;  Opcode: 1001000ddddd1111    \ Извлечение регистра из стека | Rd=STACK
+
+\ битовые операции
+cmd: SBI    A,  b    ;  Opcode: 10011010AAAAAbbb    \ Установить бит в порту | I/O(P,b)=1
+cmd: CBI    A,  b    ;  Opcode: 10011000AAAAAbbb    \ Очистить бит в порту | I/O(P,b)=0
+cmd: LSL    Rdr      ;  Opcode: 000011rdddddrrrr    \ Логический сдвиг влево | Rd(n+1)=Rd(n), Rd(0)=0, C=Rd(7)
+cmd: LSR    Rd       ;  Opcode: 1001010ddddd0110    \ Логический сдвиг вправо | Rd(n)=Rd(n+1), Rd(7)=0, C=Rd(0)
+cmd: ROL    Rdr      ;  Opcode: 000111rdddddrrrr    \ Циклический сдвиг влево через C | Rd(0)=C, Rd(n+1)=Rd(n), C=Rd(7)
+cmd: ROR    Rd       ;  Opcode: 1001010ddddd0111    \ Циклический сдвиг вправо через C | Rd(7)=C, Rd(n)=Rd(n+1), C=Rd(0)
+cmd: ASR    Rd       ;  Opcode: 1001010ddddd0101    \ Арифметический сдвиг вправо | Rd(n)=Rd(n+1), n=0,...,6
+cmd: SWAP   Rd       ;  Opcode: 1001010ddddd0010    \ Перестановка тетрад | Rd(3..0)=Rd(7..4), Rd(7..4)=Rd(3..0)
+cmd: BSET   sb       ;  Opcode: 100101000sss1000    \ Установка флага | SREG(s)=1
+cmd: BCLR   sb       ;  Opcode: 100101001sss1000    \ Очистка флага | SREG(s)=0
+cmd: BST    Rd, b    ;  Opcode: 1111101ddddd0bbb    \ Сохранить бит из регистра в T | T=Rr(b)
+cmd: BLD    Rd, b    ;  Opcode: 1111100ddddd0bbb    \ Загрузить бит из T в регистр | Rd(b)=T
+cmd: SEC             ;  Opcode: 1001010000001000    \ Установить флаг переноса | C=1
+cmd: CLC             ;  Opcode: 1001010010001000    \ Очистить флаг переноса | C=0
+cmd: SEN             ;  Opcode: 1001010000101000    \ Очистить флаг отрицательного числа | N=1
+cmd: CLN             ;  Opcode: 1001010010101000    \ Очистить флаг отрицательного числа | N=0
+cmd: SEZ             ;  Opcode: 1001010000011000    \ Установить флаг нуля | Z=1
+cmd: CLZ             ;  Opcode: 1001010010011000    \ Очистить флаг нуля | Z=0
+cmd: SEI             ;  Opcode: 1001010001111000    \ Установить флаг прерываний | I=1
+cmd: CLI             ;  Opcode: 1001010011111000    \ Очистить флаг прерываний | I=0
+cmd: SES             ;  Opcode: 1001010001001000    \ Установить флаг числа со знаком | S=1
+cmd: CLS             ;  Opcode: 1001010011001000    \ Очистить флаг числа со знаком | S=0
+cmd: SEV             ;  Opcode: 1001010000111000    \ Установить флаг переполнения | V=1
+cmd: CLV             ;  Opcode: 1001010010111000    \ Очистить флаг переполнения | V=0
+cmd: SET             ;  Opcode: 1001010001101000    \ Установить флаг T | T=1
+cmd: CLT             ;  Opcode: 1001010011101000    \ Очистить флаг T | T=0 
+cmd: SEH             ;  Opcode: 1001010001011000    \ Установить флаг внутреннего переноса | H=1
+cmd: CLH             ;  Opcode: 1001010011011000    \ Очистить флаг внутреннего переноса | H=0
+
+\ системные
+cmd: NOP             ;  Opcode: 0000000000000000    \ Нет операции  
+cmd: SLEEP           ;  Opcode: 1001010110001000    \ Спать (уменьшить энергопотребление)  
+cmd: WDR             ;  Opcode: 1001010110101000    \ Сброс сторожевого таймера  
+
+\ остальные
+cmd: BREAK           ;  Opcode: 1001010110011000    \ Останов для отладки  
+
+
+
+
+

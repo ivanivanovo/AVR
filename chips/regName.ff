@@ -1,0 +1,32 @@
+\ стандартные имена регистров GPIO
+GPIO.0
+DUP  0 + PORT: GPIO0
+DUP  1 + PORT: GPIO1 
+DUP  2 + PORT: GPIO2 
+DUP  3 + PORT: GPIO3 
+DUP  4 + PORT: GPIO4 
+DUP  5 + PORT: GPIO5 
+DUP  6 + PORT: GPIO6 
+DUP  7 + PORT: GPIO7   
+DUP  8 + PORT: GPIO8 
+DUP  9 + PORT: GPIO9 
+DUP 10 + PORT: GPIOA 
+DUP 11 + PORT: GPIOB 
+DUP 12 + PORT: GPIOC 
+DUP 13 + PORT: GPIOD 
+DUP 14 + PORT: GPIOE 
+    15 + PORT: GPIOF 
+
+\ стандартные имена регистров CPU
+CPU. 
+DUP 0x04 + PORT: CCP           \ Configuration Change Protection
+DUP 0x08 + PORT: RAMPD         \ Ramp D
+DUP 0x09 + PORT: RAMPX         \ Ramp X
+DUP 0x0A + PORT: RAMPY         \ Ramp Y
+DUP 0x0B + PORT: RAMPZ         \ Ramp Z
+DUP 0x0C + PORT: EIND          \ Extended Indirect Jump
+DUP 0x0D + PORT: SPL           \ Stack Pointer Low
+DUP 0x0E + PORT: SPH           \ Stack Pointer High
+    0x0F + PORT: SREG          \ Status Register
+
+

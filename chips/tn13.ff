@@ -1,0 +1,414 @@
+\ **************************************************************************
+decimal
+\ **** Specify Device
+\ device ATtiny13
+0x 1e CONSTANT        SIGNATURE_000         
+0x 90 CONSTANT        SIGNATURE_001
+0x 07 CONSTANT        SIGNATURE_002
+
+\ ****************************************************************************
+\ Data Memory Declarations
+\ ****************************************************************************
+
+0x 0060  CONSTANT   SRAM_START
+64       CONSTANT   SRAM_SIZE
+0x 9f    CONSTANT   RAMEND      \ Highest internal data memory (SRAM) address. (64 Bytes RAM + IO + REG)
+0x 0000  CONSTANT   XRAMEND     \ no extended memory
+0x 3f    CONSTANT   E2END       \ Highest EEPROM address. (64 Bytes)
+6        CONSTANT   EEADRBITS   \ no. of bits in EEPROM address register
+0x 005f  CONSTANT   IOEND       \ 0x20 + 0x3f
+0x 1FF   CONSTANT   FLASHEND    \  Highest program memory (flash) address
+                                \ (When addressed as 16 bit words)
+                                \ ( 512 words , 1k byte )
+0x 10    CONSTANT    PAGESIZE    \ number of WORDS in a Flash page
+2        CONSTANT    EEPAGESIZE  \ number of WORDS in an EEPROM page
+
+\ default #   TYPE    name
+    1     0   LOCK:    LB1
+    1     1   LOCK:    LB2
+
+\ ***** Fuse Bits
+\ default #   TYPE    name
+\ Low Byte
+     0    0   FUSE: CKSEL0  \ Select Clock source
+     1    1   FUSE: CKSEL1  \ Select Clock source
+     0    2   FUSE: SUT0    \ Select start-up time
+     1    3   FUSE: SUT1    \ Select start-up time
+     0    4   FUSE: CKDIV8  \ Divide clock by 8
+     1    5   FUSE: WDTON   \ Watchdog Timer always on
+     1    6   FUSE: EESAVE  \ EEPROM memory is preserved through the Chip Erase
+     0    7   FUSE: SPIEN   \ Enable Serial Program and Data Downloading
+\ High Byte
+     1    8   FUSE: RSTDISBL   \ External Reset disable
+     1    9   FUSE: BODLEVEL0  \ Brown-out Detector trigger level
+     1    10  FUSE: BODLEVEL1  \ Brown-out Detector trigger level
+     1    11  FUSE: DWEN       \ debugWire Enable
+     1    12  FUSE: SELFPRGEN  \ Self Programming Enable
+HEX[
+\ *** Interrupt Vectors ****
+000   CONSTANT    RESETaddr         \ reset
+002   CONSTANT    INT0addr          \ External Interrupt0
+004   CONSTANT    PCINT0addr        \ Pin Change Interrupt0
+006   CONSTANT    TIM0_OVF0addr     \ Overflow0 Interrupt
+008   CONSTANT    EE_RDYaddr        \ EEPROM write complete
+00A   CONSTANT    ANA_COMPaddr      \ Analog Comparator Interrupt
+00C   CONSTANT    TIM0_COMPAaddr    \ Timer/Counter0 Compare Match A
+00E   CONSTANT    TIM0_COMPBaddr    \ Timer/Counter0 Compare Match B
+010   CONSTANT    WDTaddr           \ Watchdog Timeout
+012   CONSTANT    ADCaddr           \ ADC Conversion Complete Handle
+
+014   CONSTANT    ROM_FREE          \ Стартовый адрес кода
+
+\ ****************************************************************************
+\ I/O Register Definitions
+\ ****************************************************************************
+
+3F    PORT:    SREG
+3D    PORT:    SPL
+3B    PORT:    GIMSK
+3B    PORT:    GICR               \ for verification program compatibility
+3A    PORT:    GIFR
+39    PORT:    TIMSK0
+38    PORT:    TIFR0
+37    PORT:    SPMCSR
+36    PORT:    OCR0A
+35    PORT:    MCUCR
+34    PORT:    MCUSR
+33    PORT:    TCCR0B
+32    PORT:    TCNT0
+31    PORT:    OSCCAL
+2F    PORT:    TCCR0A
+2E    PORT:    DWDR
+29    PORT:    OCR0B
+28    PORT:    GTCCR
+26    PORT:    CLKPR
+21    PORT:    WDTCR
+1E    PORT:    EEAR
+1E    PORT:    EEARL
+1D    PORT:    EEDR
+1C    PORT:    EECR
+18    PORT:    PORTB
+17    PORT:    DDRB
+16    PORT:    PINB
+15    PORT:    PCMSK
+14    PORT:    DIDR0
+08    PORT:    ACSR
+07    PORT:    ADMUX
+06    PORT:    ADCSRA
+05    PORT:    ADCH
+04    PORT:    ADCL
+03    PORT:    ADCSRB
+
+]HEX
+
+
+\ ****************************************************************************
+\ Bit Definitions
+\ ****************************************************************************
+BitsIn  SPL
+    7   #BitIs SP7
+    6   #BitIs SP6           \ SPL
+    5   #BitIs SP5
+    4   #BitIs SP4
+    3   #BitIs SP3
+    2   #BitIs SP2
+    1   #BitIs SP1
+    0   #BitIs SP0
+BitsIn  GIMSK
+    6   #BitIs INT0          \ GIMSK
+    5   #BitIs PCIE
+BitsIn  GIFR
+    6   #BitIs INTF0         \ GIFR
+    5   #BitIs PCIF
+BitsIn  TIMSK0
+    3   #BitIs OCIE0B        \ TIMSK
+    2   #BitIs OCIE0A
+    1   #BitIs TOIE0
+BitsIn  TIFR0
+    3   #BitIs OCF0B         \ TIFR
+    2   #BitIs OCF0A
+    1   #BitIs TOV0
+BitsIn  GTCCR
+    7   #BitIs TSM           \ GTCCR
+    0   #BitIs PSR10
+BitsIn  MCUCR
+    6   #BitIs PUD           \ MCUCR
+    5   #BitIs SE
+    4   #BitIs SM1
+    3   #BitIs SM0
+    1   #BitIs ISC01
+    0   #BitIs ISC00
+BitsIn  MCUSR
+    3   #BitIs WDRF          \ MCUCSR
+    2   #BitIs BORF
+    1   #BitIs EXTRF
+    0   #BitIs PORF
+BitsIn  SPMCSR
+    4   #BitIs CTPB          \ SPMCSR
+    3   #BitIs RFLB
+    2   #BitIs PGWRT
+    1   #BitIs PGERS
+    0   #BitIs SPMEN
+BitsIn  TCCR0A
+    7   #BitIs COM0A1        \ TCCR0A
+    6   #BitIs COM0A0
+    5   #BitIs COM0B1
+    4   #BitIs COM0B0
+    1   #BitIs WGM01
+    0   #BitIs WGM00
+BitsIn  TCCR0B
+    7   #BitIs FOC0A         \ TCCR0B
+    6   #BitIs FOC0B
+    3   #BitIs WGM02
+    2   #BitIs CS02
+    1   #BitIs CS01
+    0   #BitIs CS00
+BitsIn  CLKPR
+    7   #BitIs CLKPCE        \ CLKPR
+    3   #BitIs CLKPS3
+    2   #BitIs CLKPS2
+    1   #BitIs CLKPS1
+    0   #BitIs CLKPS0
+BitsIn  WDTCR
+    7   #BitIs WDTIF         \ WDTCR
+    6   #BitIs WDTIE
+    5   #BitIs WDP3
+    4   #BitIs WDCE
+    3   #BitIs WDE
+    2   #BitIs WDP2
+    1   #BitIs WDP1
+    0   #BitIs WDP0
+BitsIn  EECR
+    5   #BitIs EEPM1         \ EECR
+    4   #BitIs EEPM0
+    3   #BitIs EERIE
+    2   #BitIs EEMPE
+    1   #BitIs EEPE
+    0   #BitIs EERE
+    2   #BitIs EEMWE
+    1   #BitIs EEWE
+
+
+BitsIn  PORTB
+    5   #BitIs PORTB5        \ PORTB
+    4   #BitIs PORTB4
+    3   #BitIs PORTB3
+    2   #BitIs PORTB2
+    1   #BitIs PORTB1
+    0   #BitIs PORTB0
+BitsIn  DDRB
+    5   #BitIs DDB5          \ DDRB
+    4   #BitIs DDB4
+    3   #BitIs DDB3
+    2   #BitIs DDB2
+    1   #BitIs DDB1
+    0   #BitIs DDB0
+BitsIn  PINB
+    5   #BitIs PINB5         \ PINB
+    4   #BitIs PINB4
+    3   #BitIs PINB3
+    2   #BitIs PINB2
+    1   #BitIs PINB1
+    0   #BitIs PINB0
+BitsIn  PCMSK
+    5   #BitIs PCINT5        \ PCMSK
+    4   #BitIs PCINT4
+    3   #BitIs PCINT3
+    2   #BitIs PCINT2
+    1   #BitIs PCINT1
+    0   #BitIs PCINT0
+BitsIn  DIDR0
+    5   #BitIs ADC0D         \ DIDR0
+    4   #BitIs ADC2D
+    3   #BitIs ADC3D
+    2   #BitIs ADC1D
+    1   #BitIs AIN1D
+    0   #BitIs AIN0D
+BitsIn  ACSR
+    7   #BitIs ACD           \ ACSR
+    6   #BitIs ACBG
+    6   #BitIs AINBG         \ kept for compatibility
+    5   #BitIs ACO
+    4   #BitIs ACI
+    3   #BitIs ACIE
+    1   #BitIs ACIS1
+    0   #BitIs ACIS0
+
+BitsIn  ADMUX
+    6   #BitIs REFS0        \ ADMUX
+    5   #BitIs ADLAR
+    1   #BitIs MUX1
+    0   #BitIs MUX0
+BitsIn  ADCSRA
+    7   #BitIs ADEN          \ ADCSRA
+    6   #BitIs ADSC
+    5   #BitIs ADATE
+    4   #BitIs ADIF
+    3   #BitIs ADIE
+    2   #BitIs ADPS2
+    1   #BitIs ADPS1
+    0   #BitIs ADPS0
+    6   #BitIs ACME
+    2   #BitIs ADTS2
+    1   #BitIs ADTS1
+    0   #BitIs ADTS0
+
+\ Набор инструкций микроконтроллера ATtiny13
+\ Система обозначения операндов в основном совпадает с фирменной документацией,
+\ но для большей информативности и различимости, введены дополнительные.
+\ Rr    - регистр общего назначения (РОН), R[0...31]
+\ Rd    - регистр общего назначения, R[0...31]
+\ Rdr   - частный случай, когда Rd=Rr
+\ R'd   - старшие регистры, R[16...31]
+\ R"d   - чётные регистры, R[2,4,...30]
+\ R*d   - регистровые пары, R[24,26,28,30]
+\ b     - бит в РОН или порту, доступный для битовых команд
+\ sb    - бит в системном регистре SREG 
+\ k     - абсолютный адрес в пространстве ROM, всегда >0
+\ -k    - относительный адрес, может быть отрицательным
+\ (k)   - абсолютный адрес в пространстве RAM
+\ A     - адрес в пространстве ввода-вывода, 0<=A<=31 (или 32<=(k)<=63 в RAM)
+\ !K!   - байт маски, при ассемблировании инвертируется
+\ K!    - байт, константа
+
+\ ------------------------------------------------------------------------------
+\ первое opcode (последнее при поиске) в цепи - заглушка
+\ ------------------------------------------------------------------------------
+cmd: ?unknown?  ?.   ;  Opcode: ................    \ заглушка        
+\ порядок следования команд в этом списке в основном совпадает с документацией,
+\ но похожие команды должны следовать от большего числа параметров к меньшим.
+\ арифметические и логические операции
+cmd: ADD    Rd, Rr   ;  Opcode: 000011rdddddrrrr    \ Суммирование без переноса | Rd=Rd + Rr 
+cmd: ADC    Rd, Rr   ;  Opcode: 000111rdddddrrrr    \ Суммирование с переносом | Rd=Rd + Rr + C
+cmd: ADIW   R*d, K!  ;  Opcode: 10010110KKddKKKK    \ Сложить константу и слово | Rdh:Rdl=Rdh:Rdl + K6 
+cmd: SUB    Rd, Rr   ;  Opcode: 000110rdddddrrrr    \ Вычитание без переноса | Rd=Rd - Rr
+cmd: SUBI   R'd, K!  ;  Opcode: 0101KKKKddddKKKK    \ Вычитание константы | Rd=Rd - K8
+cmd: SBIW   R*d, K!  ;  Opcode: 10010111KKddKKKK    \ Вычесть константу из слова | Rdh:Rdl=Rdh:Rdl - K6
+cmd: SBC    Rd, Rr   ;  Opcode: 000010rdddddrrrr    \ Вычитание с переносом | Rd=Rd - Rr - C
+cmd: SBCI   R'd, K!  ;  Opcode: 0100KKKKddddKKKK    \ Вычитание константы с переносом | Rd=Rd - K8 - C
+cmd: AND    Rd, Rr   ;  Opcode: 001000rdddddrrrr    \ Логическое И | Rd=Rd · Rr
+cmd: CBR    R'd, !K! ;  Opcode: 0111KKKKddddKKKK    \ Сбросить бит (биты) в регистре | Rd=Rd · ($FF - K8)
+cmd: ANDI   R'd, K!  ;  Opcode: 0111KKKKddddKKKK    \ Логическое И с константой | Rd=Rd · K8
+cmd: OR     Rd, Rr   ;  Opcode: 001010rdddddrrrr    \ Логическое ИЛИ | Rd=Rd V Rr
+cmd: SBR    R'd, K!  ;  Opcode: 0110KKKKddddKKKK    \ Установить бит (биты) в регистре | Rd=Rd V K8
+cmd: ORI    R'd, K!  ;  Opcode: 0110KKKKddddKKKK    \ Логическое ИЛИ с константой | Rd=Rd V K8
+cmd: EOR    Rd, Rr   ;  Opcode: 001001rdddddrrrr    \ Логическое исключающее ИЛИ | Rd=Rd EOR Rr
+cmd: COM    Rd       ;  Opcode: 1001010ddddd0000    \ Побитная Инверсия | Rd=$FF - Rd
+cmd: NEG    Rd       ;  Opcode: 1001010ddddd0001    \ Изменение знака (Доп. код) | Rd=$00 - Rd
+cmd: INC    Rd       ;  Opcode: 1001010ddddd0011    \ Инкрементировать значение регистра | Rd=Rd + 1
+cmd: DEC    Rd       ;  Opcode: 1001010ddddd1010    \ Декрементировать значение регистра | Rd=Rd -1
+cmd: TST    Rdr      ;  Opcode: 001000rdddddrrrr    \ Проверка на ноль либо отрицательность | Rd=Rd · Rd
+cmd: CLR    Rdr      ;  Opcode: 001001rdddddrrrr    \ Очистить регистр | Rd=0
+cmd: SER    R'd      ;  Opcode: 11101111dddd1111    \ Установить регистр | Rd=$FF
+
+\ передача управления
+cmd: RJMP   -k       ;  Opcode: 1100kkkkkkkkkkkk    \ Относительный переход | PC=PC + k +1
+cmd: IJMP            ;  Opcode: 1001010000001001    \ Косвенный переход на (Z) | PC=Z
+cmd: RCALL  -k       ;  Opcode: 1101kkkkkkkkkkkk    \ Относительный вызов подпрограммы | STACK=PC+1, PC=PC + k + 1
+cmd: ICALL           ;  Opcode: 1001010100001001    \ Косвенный вызов (Z) | STACK=PC+1, PC=Z 
+cmd: RET             ;  Opcode: 1001010100001000    \ Возврат из подпрограммы | PC=STACK
+cmd: RETI            ;  Opcode: 1001010100011000    \ Возврат из прерывания | PC=STACK
+cmd: CPSE   Rd, Rr   ;  Opcode: 000100rdddddrrrr    \ Сравнить, пропустить если равны | if (Rd==Rr) PC=PC 2 or 3
+cmd: CP     Rd, Rr   ;  Opcode: 000101rdddddrrrr    \ Сравнить | Rd -Rr
+cmd: CPC    Rd, Rr   ;  Opcode: 000001rdddddrrrr    \ Сравнить с переносом | Rd - Rr - C
+cmd: CPI    R'd, K!  ;  Opcode: 0011KKKKddddKKKK    \ Сравнить с константой | Rd - K
+cmd: SBRC   Rr, b    ;  Opcode: 1111110rrrrr0bbb    \ Пропустить если бит в регистре очищен |if(Rr(b)==0) PC=PC + 2 or 3
+cmd: SBRS   Rr, b    ;  Opcode: 1111111rrrrr0bbb    \ Пропустить если бит в регистре установлен | if(Rr(b)==1) PC=PC + 2 or 3   
+cmd: SBIC   A,  b    ;  Opcode: 10011001AAAAAbbb    \ Пропустить если бит в порту очищен | if(I/O(P,b)==0) PC=PC + 2 or 3
+cmd: SBIS   A,  b    ;  Opcode: 10011011AAAAAbbb    \ Пропустить если бит в порту установлен | if(I/O(P,b)==1) PC=PC + 2 or 3
+cmd: BRBS   sb, -k   ;  Opcode: 111100kkkkkkksss    \ Перейти если флаг в SREG установлен | if(SREG(s)==1) PC=PC + k + 1
+cmd: BRBC   sb, -k   ;  Opcode: 111101kkkkkkksss    \ Перейти если флаг в SREG очищен | if(SREG(s)==0) PC=PC + k + 1
+cmd: BREQ   -k       ;  Opcode: 111100kkkkkkk001    \ Перейти если равно | if(Z==1) PC=PC + k + 1
+cmd: BRNE   -k       ;  Opcode: 111101kkkkkkk001    \ Перейти если не равно | if(Z==0) PC=PC + k + 1
+cmd: BRLO   -k       ;  Opcode: 111100kkkkkkk000    \ Перейти если меньше | if(C==1) PC=PC + k + 1
+cmd: BRCS   -k       ;  Opcode: 111100kkkkkkk000    \ Перейти если перенос установлен | if(C==1) PC=PC + k + 1
+cmd: BRSH   -k       ;  Opcode: 111101kkkkkkk000    \ Перейти если равно или больше | if(C==0) PC=PC + k + 1
+cmd: BRCC   -k       ;  Opcode: 111101kkkkkkk000    \ Перейти если перенос очищен | if(C==0) PC=PC + k + 1
+cmd: BRMI   -k       ;  Opcode: 111100kkkkkkk010    \ Перейти если минус | if(N==1) PC=PC + k + 1
+cmd: BRPL   -k       ;  Opcode: 111101kkkkkkk010    \ Перейти если плюс | if(N==0) PC=PC + k + 1
+cmd: BRGE   -k       ;  Opcode: 111101kkkkkkk100    \ Перейти если больше или равно (со знаком) | if(S==0) PC=PC + k + 1
+cmd: BRLT   -k       ;  Opcode: 111100kkkkkkk100    \ Перейти если меньше нуля (со знаком) | if(S==1) PC=PC + k + 1
+cmd: BRHS   -k       ;  Opcode: 111100kkkkkkk101    \ Перейти если флаг внутреннего переноса установлен | if(H==1) PC=PC + k + 1
+cmd: BRHC   -k       ;  Opcode: 111101kkkkkkk101    \ Перейти если флаг внутреннего переноса очищен | if(H==0) PC=PC + k + 1
+cmd: BRTS   -k       ;  Opcode: 111100kkkkkkk110    \ Перейти если флаг T установлен | if(T==1) PC=PC + k + 1
+cmd: BRTC   -k       ;  Opcode: 111101kkkkkkk110    \ Перейти если флаг T очищен | if(T==0) PC=PC + k + 1
+cmd: BRVS   -k       ;  Opcode: 111100kkkkkkk011    \ Перейти если флаг переполнения установлен | if(V==1) PC=PC + k + 1
+cmd: BRVC   -k       ;  Opcode: 111101kkkkkkk011    \ Перейти если флаг переполнения очищен | if(V==0) PC=PC + k + 1
+cmd: BRIE   -k       ;  Opcode: 111100kkkkkkk111    \ Перейти если прерывания разрешены | if(I==1) PC=PC + k + 1
+cmd: BRID   -k       ;  Opcode: 111101kkkkkkk111    \ Перейти если прерывания запрещены | if(I==0) PC=PC + k + 1
+
+\ перемещение данных
+cmd: MOV    Rd, Rr   ;  Opcode: 001011rdddddrrrr    \ Скопировать регистр | Rd=Rr
+cmd: MOVW   R"d, R"r ;  Opcode: 00000001ddddrrrr    \ Скопировать пару регистров | Rd+1:Rd=Rr+1:Rr, r,d чётные
+cmd: LDI    R'd, K!  ;  Opcode: 1110KKKKddddKKKK    \ Загрузить константу | Rd=K
+cmd: LD     Rd, X+   ;  Opcode: 1001000ddddd1101    \ Косвенная загрузка с пост-инкрементом | Rd=(X), X=X+1
+cmd: LD     Rd, -X   ;  Opcode: 1001000ddddd1110    \ Косвенная загрузка с пре-декрементом | X=X-1, Rd=(X)
+cmd: LD     Rd, X    ;  Opcode: 1001000ddddd1100    \ Косвенная загрузка | Rd=(X)
+cmd: LDD    Rd, Y+q  ;  Opcode: 10q0qq0ddddd1qqq    \ Косвенная загрузка со смещением | Rd=(Y+q) 
+cmd: LD     Rd, Y+   ;  Opcode: 1001000ddddd1001    \ Косвенная загрузка с пост-инкрементом | Rd=(Y), Y=Y+1
+cmd: LD     Rd, -Y   ;  Opcode: 1001000ddddd1010    \ Косвенная загрузка с пре-декрементом | Y=Y-1, Rd=(Y)
+cmd: LD     Rd, Y    ;  Opcode: 1000000ddddd1000    \ Косвенная загрузка | Rd=(Y)
+cmd: LDD    Rd, Z+q  ;  Opcode: 10q0qq0ddddd0qqq    \ Косвенная загрузка со смещением | Rd=(Z+q) 
+cmd: LD     Rd, Z+   ;  Opcode: 1001000ddddd0001    \ Косвенная загрузка с пост-инкрементом | Rd=(Z), Z=Z+1
+cmd: LD     Rd, -Z   ;  Opcode: 1001000ddddd0010    \ Косвенная загрузка с пре-декрементом | Z=Z-1, Rd=(Z)
+cmd: LD     Rd, Z    ;  Opcode: 1000000ddddd0000    \ Косвенная загрузка | Rd=(Z)
+cmd: LDS    Rd, (k)  ;  Opcode: 1001000ddddd0000 ext: kkkkkkkkkkkkkkkk \ Прямая загрузка | Rd=(k)
+cmd: ST     X+, Rr   ;  Opcode: 1001001rrrrr1101    \ Косвенное сохранение с пост-инкрементом | (X)=Rr, X=X+1
+cmd: ST     -X, Rr   ;  Opcode: 1001001rrrrr1110    \ Косвенное сохранение с пре-декрементом | X=X-1, (X)=Rr
+cmd: ST     X,  Rr   ;  Opcode: 1001001rrrrr1100    \ Косвенное сохранение | (X)=Rr
+cmd: STD    Y+q, Rr  ;  Opcode: 10q0qq1rrrrr1qqq    \ Косвенное сохранение со смещением | (Y+q)=Rr
+cmd: ST     Y+, Rr   ;  Opcode: 1001001rrrrr1001    \ Косвенное сохранение с пост-инкрементом | (Y)=Rr, Y=Y+1 
+cmd: ST     -Y, Rr   ;  Opcode: 1001001rrrrr1010    \ Косвенное сохранение с пре-декрементом | Y=Y-1, (Y)=Rr 
+cmd: ST     Y,  Rr   ;  Opcode: 1000001rrrrr1000    \ Косвенное сохранение | (Y)=Rr
+cmd: STD    Z+q, Rr  ;  Opcode: 10q0qq1rrrrr0qqq    \ Косвенное сохранение со смещением | (Z+q)=Rr
+cmd: ST     Z+, Rr   ;  Opcode: 1001001rrrrr0001    \ Косвенное сохранение с пост-инкрементом | (Z)=Rr, Z=Z+1 
+cmd: ST     -Z, Rr   ;  Opcode: 1001001rrrrr0010    \ Косвенное сохранение с пре-декрементом | Z=Z-1, (Z)=Rr
+cmd: ST     Z,  Rr   ;  Opcode: 1000001rrrrr0000    \ Косвенное сохранение | (Z)=Rr
+cmd: STS    (k), Rr  ;  Opcode: 1001001rrrrr0000 ext: kkkkkkkkkkkkkkkk \ Прямое сохранение | (k)=Rr
+cmd: LPM    Rd, Z+   ;  Opcode: 1001000ddddd0101    \ Загрузка из программной памяти с пост-инкрементом | Rd=(Z), Z=Z+1
+cmd: LPM    Rd, Z    ;  Opcode: 1001000ddddd0100    \ Загрузка из программной памяти | Rd=(Z)
+cmd: LPM             ;  Opcode: 1001010111001000    \ Загрузка из программной памяти | R0=(Z)
+cmd: SPM             ;  Opcode: 1001010111101000    \ Сохранение в программной памяти | (Z)=R1:R0
+cmd: IN     Rd, A    ;  Opcode: 10110AAdddddAAAA    \ Чтение порта | Rd=P
+cmd: OUT    A,  Rr   ;  Opcode: 10111AArrrrrAAAA    \ Запись в порт | P=Rr
+cmd: PUSH   Rr       ;  Opcode: 1001001rrrrr1111    \ Занесение регистра в стек | STACK=Rr
+cmd: POP    Rd       ;  Opcode: 1001000ddddd1111    \ Извлечение регистра из стека | Rd=STACK
+
+\ битовые операции
+cmd: SBI    A,  b    ;  Opcode: 10011010AAAAAbbb    \ Установить бит в порту | I/O(P,b)=1
+cmd: CBI    A,  b    ;  Opcode: 10011000AAAAAbbb    \ Очистить бит в порту | I/O(P,b)=0
+cmd: LSL    Rdr      ;  Opcode: 000011rdddddrrrr    \ Логический сдвиг влево | Rd(n+1)=Rd(n), Rd(0)=0, C=Rd(7)
+cmd: LSR    Rd       ;  Opcode: 1001010ddddd0110    \ Логический сдвиг вправо | Rd(n)=Rd(n+1), Rd(7)=0, C=Rd(0)
+cmd: ROL    Rdr      ;  Opcode: 000111rdddddrrrr    \ Циклический сдвиг влево через C | Rd(0)=C, Rd(n+1)=Rd(n), C=Rd(7)
+cmd: ROR    Rd       ;  Opcode: 1001010ddddd0111    \ Циклический сдвиг вправо через C | Rd(7)=C, Rd(n)=Rd(n+1), C=Rd(0)
+cmd: ASR    Rd       ;  Opcode: 1001010ddddd0101    \ Арифметический сдвиг вправо | Rd(n)=Rd(n+1), n=0,...,6
+cmd: SWAP   Rd       ;  Opcode: 1001010ddddd0010    \ Перестановка тетрад | Rd(3..0)=Rd(7..4), Rd(7..4)=Rd(3..0)
+cmd: BSET   sb       ;  Opcode: 100101000sss1000    \ Установка флага | SREG(s)=1
+cmd: BCLR   sb       ;  Opcode: 100101001sss1000    \ Очистка флага | SREG(s)=0
+cmd: BST    Rd, b    ;  Opcode: 1111101ddddd0bbb    \ Сохранить бит из регистра в T | T=Rr(b)
+cmd: BLD    Rd, b    ;  Opcode: 1111100ddddd0bbb    \ Загрузить бит из T в регистр | Rd(b)=T
+cmd: SEC             ;  Opcode: 1001010000001000    \ Установить флаг переноса | C=1
+cmd: CLC             ;  Opcode: 1001010010001000    \ Очистить флаг переноса | C=0
+cmd: SEN             ;  Opcode: 1001010000101000    \ Очистить флаг отрицательного числа | N=1
+cmd: CLN             ;  Opcode: 1001010010101000    \ Очистить флаг отрицательного числа | N=0
+cmd: SEZ             ;  Opcode: 1001010000011000    \ Установить флаг нуля | Z=1
+cmd: CLZ             ;  Opcode: 1001010010011000    \ Очистить флаг нуля | Z=0
+cmd: SEI             ;  Opcode: 1001010001111000    \ Установить флаг прерываний | I=1
+cmd: CLI             ;  Opcode: 1001010011111000    \ Очистить флаг прерываний | I=0
+cmd: SES             ;  Opcode: 1001010001001000    \ Установить флаг числа со знаком | S=1
+cmd: CLS             ;  Opcode: 1001010011001000    \ Очистить флаг числа со знаком | S=0
+cmd: SEV             ;  Opcode: 1001010000111000    \ Установить флаг переполнения | V=1
+cmd: CLV             ;  Opcode: 1001010010111000    \ Очистить флаг переполнения | V=0
+cmd: SET             ;  Opcode: 1001010001101000    \ Установить флаг T | T=1
+cmd: CLT             ;  Opcode: 1001010011101000    \ Очистить флаг T | T=0 
+cmd: SEH             ;  Opcode: 1001010001011000    \ Установить флаг внутреннего переноса | H=1
+cmd: CLH             ;  Opcode: 1001010011011000    \ Очистить флаг внутреннего переноса | H=0
+
+\ системные
+cmd: NOP             ;  Opcode: 0000000000000000    \ Нет операции  
+cmd: SLEEP           ;  Opcode: 1001010110001000    \ Спать (уменьшить энергопотребление)  
+cmd: WDR             ;  Opcode: 1001010110101000    \ Сброс сторожевого таймера  
+cmd: BREAK           ;  Opcode: 1001010110011000    \ Останов для отладки  
+
+
+

@@ -1,0 +1,19 @@
+\ ***************************************************************************
+\ device ATtiny44
+\ ***************************************************************************
+DECIMAL
+\ *****************************************************************************
+\  Data Memory Declarations
+\ *****************************************************************************
+HEX[
+03F   CONSTANT      IOEND       \  256 bytes I/O
+00DF  CONSTANT      RAMEND      \  byte
+003FF CONSTANT      FLASHEND    \  word (2byte)
+0     CONSTANT      XRAMEND     \  Last External RAM Location
+007F  CONSTANT      E2END       \  Last EEPROM Location
+0060  CONSTANT      SRAM_START
+]HEX
+16    CONSTANT      PAGESIZE    \ number of WORDS in a page
+
+S" ATtiny24-44-84.fs" INCLUDED
+

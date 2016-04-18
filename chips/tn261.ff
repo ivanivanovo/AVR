@@ -1,0 +1,933 @@
+\ ***** SPECIFY DEVICE ***************************************************
+\ device ATtiny261
+\ Signature 0x910C
+\   SIGNATURE_000  0x1e
+\   SIGNATURE_001  0x91
+\   SIGNATURE_002  0x0c
+DECIMAL
+\ ***** DATA MEMORY DECLARATIONS *****************************************
+HEX[
+    03ff  CONSTANT FLASHEND   \ Note: Word address
+    005f  CONSTANT IOEND  
+    0060  CONSTANT SRAM_START  
+    80    CONSTANT SRAM_SIZE  
+    00df  CONSTANT RAMEND  
+    0000  CONSTANT XRAMEND  
+    007f  CONSTANT E2END  
+    007f  CONSTANT EEPROMEND  
+    7     CONSTANT EEADRBITS  
+    \ MEMORY PROG_FLASH 2048
+    \ MEMORY EEPROM 128
+    \ MEMORY INT_SRAM SIZE 128
+    \ MEMORY INT_SRAM START_ADDR  0x60
+]HEX
+
+
+\ ***** BOOTLOADER DECLARATIONS ******************************************
+HEX[
+    0     CONSTANT NRWW_START_ADDR  
+    3ff   CONSTANT NRWW_STOP_ADDR  
+    0     CONSTANT RWW_START_ADDR  
+    0     CONSTANT RWW_STOP_ADDR  
+   10     CONSTANT PAGESIZE    ( слов)
+    4     CONSTANT EEPAGESIZE  ( байт)
+]HEX
+
+
+\ ***** INTERRUPT VECTORS ************************************************
+HEX[
+    0002 CONSTANT INT0addr        \ External Interrupt 0
+    0004 CONSTANT PCIaddr         \ Pin Change Interrupt
+    0006 CONSTANT OC1Aaddr        \ Timer/Counter1 Compare Match 1A
+    0008 CONSTANT OC1Baddr        \ Timer/Counter1 Compare Match 1B
+    000A CONSTANT OVF1addr        \ Timer/Counter1 Overflow
+    000C CONSTANT OVF0addr        \ Timer/Counter0 Overflow
+    000E CONSTANT USI_STARTaddr   \ USI Start
+    0010 CONSTANT USI_OVFaddr     \ USI Overflow
+    0012 CONSTANT ERDYaddr        \ EEPROM Ready
+    0014 CONSTANT ACIaddr         \ Analog Comparator
+    0016 CONSTANT ADCCaddr        \ ADC Conversion Complete
+    0018 CONSTANT WDTaddr         \ Watchdog Time-Out
+    001A CONSTANT INT1addr        \ External Interrupt 1
+    001C CONSTANT OC0Aaddr        \ Timer/Counter0 Compare Match A
+    001E CONSTANT OC0Baddr        \ Timer/Counter0 Compare Match B
+    0020 CONSTANT ICP0addr        \ ADC Conversion Complete
+    0022 CONSTANT OC1Daddr        \ Timer/Counter1 Compare Match D
+    0024 CONSTANT FAULT_PROTaddr  \ Timer/Counter1 Fault Protection
+
+    0026 CONSTANT ROM_FREE         \ Стартовый адрес кода
+]HEX
+19     CONSTANT INT_VECTORS_SIZE \ size in words
+\ Minimum Wait Delay before Writing the Next Flash or EEPROM Location (ms)
+5 CONSTANT TwdFlash
+4 CONSTANT TwdEEPROM
+4 CONSTANT TwdErase
+5 CONSTANT TwdFuse
+
+\ ***** Lock Bits
+\ default #   TYPE    name
+    1     0   LOCK:    LB1
+    1     1   LOCK:    LB2
+
+\ ***** Fuse Bits
+\ default #   TYPE    name
+   \ low byte
+0  0 FUSE:    CKSEL0      
+1  1 FUSE:    CKSEL1
+0  2 FUSE:    CKSEL2
+0  3 FUSE:    CKSEL3
+0  4 FUSE:    SUT0
+1  5 FUSE:    SUT1
+1  6 FUSE:    CKOUT
+0  7 FUSE:    CKDIV8
+   \ high byte
+1  8 FUSE:    BODLEVEL0
+1  9 FUSE:    BODLEVEL1
+1 10 FUSE:    BODLEVEL2
+1 11 FUSE:    EESAVE
+1 12 FUSE:    WDTON
+0 13 FUSE:    SPIEN
+1 14 FUSE:    DWEN
+1 15 FUSE:    RSTDISBL
+  \ Extended Fuse Byte
+1 16 FUSE:    SELFPRGEN
+
+
+\ ***** I/O REGISTER DEFINITIONS *****************************************
+\ NOTE:
+\ Definitions marked "MEMORY MAPPED"are extended I/O ports
+\ and cannot be used with IN/OUT instructions
+HEX[
+    3f PORT: SREG  
+    3e PORT: SPH  
+    3d PORT: SPL  
+    3d PORT: SP  
+    3b PORT: GIMSK  
+    3b PORT: GICR
+    3a PORT: GIFR  
+    39 PORT: TIMSK  
+    38 PORT: TIFR  
+    37 PORT: SPMCSR  
+    36 PORT: PRR  
+    35 PORT: MCUCR  
+    34 PORT: MCUSR  
+    33 PORT: TCCR0B  
+    32 PORT: TCNT0L  
+    31 PORT: OSCCAL  
+    30 PORT: TCCR1A  
+    2f PORT: TCCR1B  
+    2e PORT: TCNT1  
+    2d PORT: OCR1A  
+    2c PORT: OCR1B  
+    2b PORT: OCR1C  
+    2a PORT: OCR1D  
+    29 PORT: PLLCSR  
+    28 PORT: CLKPR  
+    27 PORT: TCCR1C  
+    26 PORT: TCCR1D  
+    25 PORT: TC1H  
+    24 PORT: DT1  
+    23 PORT: PCMSK0  
+    22 PORT: PCMSK1  
+    21 PORT: WDTCR  
+    21 PORT: WDTCSR  
+    20 PORT: DWDR  
+    1f PORT: EEARH  
+    1e PORT: EEARL  
+    1d PORT: EEDR  
+    1c PORT: EECR  
+    1b PORT: PORTA  
+    1a PORT: DDRA  
+    19 PORT: PINA  
+    18 PORT: PORTB  
+    17 PORT: DDRB  
+    16 PORT: PINB  
+    15 PORT: TCCR0A  
+    14 PORT: TCNT0H  
+    13 PORT: OCR0A  
+    12 PORT: OCR0B  
+    11 PORT: USIPP  
+    10 PORT: USIBR  
+    0f PORT: USIDR  
+    0e PORT: USISR  
+    0d PORT: USICR  
+    0c PORT: GPIOR2  
+    0b PORT: GPIOR1  
+    0a PORT: GPIOR0    
+    09 PORT: ACSRB    
+    08 PORT: ACSRA    
+    07 PORT: ADMUX  
+    06 PORT: ADCSRA 
+    05 PORT: ADCH    
+    04 PORT: ADCL    
+    03 PORT: ADCSRB 
+    02 PORT: DIDR1    
+    01 PORT: DIDR0    
+    00 PORT: TCCR1E  
+]HEX
+
+\ ***** BIT DEFINITIONS **************************************************
+\ ***** PORTA ************************
+BitsIn PORTA    \ Port A Data Register
+    0 #bitIs PORTA0 \ Port A Data Register bit 0
+    0 #bitIs PA0    \ For compatibility
+    1 #bitIs PORTA1 \ Port A Data Register bit 1
+    1 #bitIs PA1    \ For compatibility
+    2 #bitIs PORTA2 \ Port A Data Register bit 2
+    2 #bitIs PA2    \ For compatibility
+    3 #bitIs PORTA3 \ Port A Data Register bit 3
+    3 #bitIs PA3    \ For compatibility
+    4 #bitIs PORTA4 \ Port A Data Register bit 4
+    4 #bitIs PA4    \ For compatibility
+    5 #bitIs PORTA5 \ Port A Data Register bit 5
+    5 #bitIs PA5    \ For compatibility
+    6 #bitIs PORTA6 \ Port A Data Register bit 6
+    6 #bitIs PA6    \ For compatibility
+    7 #bitIs PORTA7 \ Port A Data Register bit 7
+    7 #bitIs PA7    \ For compatibility
+
+BitsIn DDRA \ Port A Data Direction Register
+    0 #bitIs DDA0   \ Data Direction Register, Port A, bit 0
+    1 #bitIs DDA1   \ Data Direction Register, Port A, bit 1
+    2 #bitIs DDA2   \ Data Direction Register, Port A, bit 2
+    3 #bitIs DDA3   \ Data Direction Register, Port A, bit 3
+    4 #bitIs DDA4   \ Data Direction Register, Port A, bit 4
+    5 #bitIs DDA5   \ Data Direction Register, Port A, bit 5
+    6 #bitIs DDA6   \ Data Direction Register, Port A, bit 6
+    7 #bitIs DDA7   \ Data Direction Register, Port A, bit 7
+
+BitsIn PINA \ Port A Input Pins
+    0 #bitIs PINA0   \ Input Pins, Port A bit 0
+    1 #bitIs PINA1   \ Input Pins, Port A bit 1
+    2 #bitIs PINA2   \ Input Pins, Port A bit 2
+    3 #bitIs PINA3   \ Input Pins, Port A bit 3
+    4 #bitIs PINA4   \ Input Pins, Port A bit 4
+    5 #bitIs PINA5   \ Input Pins, Port A bit 5
+    6 #bitIs PINA6   \ Input Pins, Port A bit 6
+    7 #bitIs PINA7   \ Input Pins, Port A bit 7
+
+
+\ ***** PORTB ************************
+BitsIn PORTB \ Port B Data Register
+    0 #bitIs PORTB0 \ Port B Data Register bit 0
+    0 #bitIs PB0    \ For compatibility
+    1 #bitIs PORTB1 \ Port B Data Register bit 1
+    1 #bitIs PB1    \ For compatibility
+    2 #bitIs PORTB2 \ Port B Data Register bit 2
+    2 #bitIs PB2    \ For compatibility
+    3 #bitIs PORTB3 \ Port B Data Register bit 3
+    3 #bitIs PB3    \ For compatibility
+    4 #bitIs PORTB4 \ Port B Data Register bit 4
+    4 #bitIs PB4    \ For compatibility
+    5 #bitIs PORTB5 \ Port B Data Register bit 5
+    5 #bitIs PB5    \ For compatibility
+    6 #bitIs PORTB6 \ Port B Data Register bit 6
+    6 #bitIs PB6    \ For compatibility
+    7 #bitIs PORTB7 \ Port B Data Register bit 7
+    7 #bitIs PB7    \ For compatibility
+
+BitsIn DDRB \ Port B Data Direction Register
+     _bitIs DDB0   \ Port B Data Direction Register bit 0
+     _bitIs DDB1   \ Port B Data Direction Register bit 1
+     _bitIs DDB2   \ Port B Data Direction Register bit 2
+     _bitIs DDB3   \ Port B Data Direction Register bit 3
+     _bitIs DDB4   \ Port B Data Direction Register bit 4
+     _bitIs DDB5   \ Port B Data Direction Register bit 5
+     _bitIs DDB6   \ Port B Data Direction Register bit 6
+     _bitIs DDB7   \ Port B Data Direction Register bit 7
+
+BitsIn PINB \ Port B Input Pins
+     _bitIs PINB0   \ Port B Input Pins bit 0
+     _bitIs PINB1   \ Port B Input Pins bit 1
+     _bitIs PINB2   \ Port B Input Pins bit 2
+     _bitIs PINB3   \ Port B Input Pins bit 3
+     _bitIs PINB4   \ Port B Input Pins bit 4
+     _bitIs PINB5   \ Port B Input Pins bit 5
+     _bitIs PINB6   \ Port B Input Pins bit 6
+     _bitIs PINB7   \ Port B Input Pins bit 7
+
+
+\ ***** AD_CONVERTER *****************
+BitsIn ADMUX \ The ADC multiplexer Selection Register
+     _bitIs MUX0   \ Analog Channel and Gain Selection Bits
+     _bitIs MUX1   \ Analog Channel and Gain Selection Bits
+     _bitIs MUX2   \ Analog Channel and Gain Selection Bits
+     _bitIs MUX3   \ Analog Channel and Gain Selection Bits
+     _bitIs MUX4   \ Analog Channel and Gain Selection Bits
+     _bitIs ADLAR  \ Left Adjust Result
+     _bitIs REFS0  \ Reference Selection Bit 0
+     _bitIs REFS1  \ Reference Selection Bit 1
+
+BitsIn ADCSRA \ The ADC Control and Status register
+     _bitIs ADPS0  \ ADC Prescaler Select Bits
+     _bitIs ADPS1  \ ADC Prescaler Select Bits
+     _bitIs ADPS2  \ ADC Prescaler Select Bits
+     _bitIs ADIE   \ ADC Interrupt Enable
+     _bitIs ADIF   \ ADC Interrupt Flag
+     _bitIs ADATE  \ ADC Auto Trigger Enable
+     _bitIs ADSC   \ ADC Start Conversion
+     _bitIs ADEN   \ ADC Enable
+
+BitsIn ADCH \ ADC Data Register High Byte
+     _bitIs ADCH0   \ ADC Data Register High Byte Bit 0
+     _bitIs ADCH1   \ ADC Data Register High Byte Bit 1
+     _bitIs ADCH2   \ ADC Data Register High Byte Bit 2
+     _bitIs ADCH3   \ ADC Data Register High Byte Bit 3
+     _bitIs ADCH4   \ ADC Data Register High Byte Bit 4
+     _bitIs ADCH5   \ ADC Data Register High Byte Bit 5
+     _bitIs ADCH6   \ ADC Data Register High Byte Bit 6
+     _bitIs ADCH7   \ ADC Data Register High Byte Bit 7
+
+BitsIn ADCL \ ADC Data Register Low Byte
+     _bitIs ADCL0   \ ADC Data Register Low Byte Bit 0
+     _bitIs ADCL1   \ ADC Data Register Low Byte Bit 1
+     _bitIs ADCL2   \ ADC Data Register Low Byte Bit 2
+     _bitIs ADCL3   \ ADC Data Register Low Byte Bit 3
+     _bitIs ADCL4   \ ADC Data Register Low Byte Bit 4
+     _bitIs ADCL5   \ ADC Data Register Low Byte Bit 5
+     _bitIs ADCL6   \ ADC Data Register Low Byte Bit 6
+     _bitIs ADCL7   \ ADC Data Register Low Byte Bit 7
+
+BitsIn ADCSRB \ ADC Control and Status Register B
+     _bitIs ADTS0   \ ADC Auto Trigger Source 0
+     _bitIs ADTS1   \ ADC Auto Trigger Source 1
+     _bitIs ADTS2   \ ADC Auto Trigger Source 2
+     _bitIs MUX5    \ 
+     _bitIs REFS2   \ 
+     _bitIs IPR     \ Input Polarity Mode
+     _bitIs GSEL    \ Gain Select
+     _bitIs BIN     \ Bipolar Input Mode
+
+BitsIn DIDR0 \ Digital Input Disable Register 0
+     _bitIs ADC0D   \ ADC0 Digital input Disable
+     _bitIs ADC1D   \ ADC1 Digital input Disable
+     _bitIs ADC2D   \ ADC2 Digital input Disable
+     _bitIs AREFD   \ AREF Digital Input Disable
+     _bitIs ADC3D   \ ADC3 Digital input Disable
+     _bitIs ADC4D   \ ADC4 Digital input Disable
+     _bitIs ADC5D   \ ADC5 Digital input Disable
+     _bitIs ADC6D   \ ADC6 Digital input Disable
+
+BitsIn DIDR1 \ Digital Input Disable Register 1
+   4 #bitIs ADC7D   \ ADC7 Digital input Disable
+     _bitIs ADC8D   \ ADC8 Digital input Disable
+     _bitIs ADC9D   \ ADC9 Digital input Disable
+     _bitIs ADC10D  \ ADC10 Digital input Disable
+
+
+\ ***** ANALOG_COMPARATOR ************
+BitsIn ACSRA \ Analog Comparator Control And Status Register A
+     _bitIs ACIS0   \ Analog Comparator Interrupt Mode Select bit 0
+     _bitIs ACIS1   \ Analog Comparator Interrupt Mode Select bit 1
+     _bitIs ACME    \ Analog Comparator Multiplexer Enable
+     _bitIs ACIE    \ Analog Comparator Interrupt Enable
+     _bitIs ACI     \ Analog Comparator Interrupt Flag
+     _bitIs ACO     \ Analog Compare Output
+     _bitIs ACBG    \ Analog Comparator Bandgap Select
+     _bitIs ACD     \ Analog Comparator Disable
+
+BitsIn ACSRB \ Analog Comparator Control And Status Register B
+     _bitIs ACM0    \ Analog Comparator Multiplexer
+     _bitIs ACM1    \ Analog Comparator Multiplexer
+     _bitIs ACM2    \ Analog Comparator Multiplexer
+   6 #bitIs HLEV    \ Hysteresis Level
+     _bitIs HSEL    \ Hysteresis Select
+
+
+\ ***** USI **************************
+BitsIn USIPP \ USI Pin Position
+     _bitIs USIPOS   \ USI Pin Position
+
+BitsIn USIBR \ USI Buffer Register
+     _bitIs USIBR0   \ USI Buffer Register bit 0
+     _bitIs USIBR1   \ USI Buffer Register bit 1
+     _bitIs USIBR2   \ USI Buffer Register bit 2
+     _bitIs USIBR3   \ USI Buffer Register bit 3
+     _bitIs USIBR4   \ USI Buffer Register bit 4
+     _bitIs USIBR5   \ USI Buffer Register bit 5
+     _bitIs USIBR6   \ USI Buffer Register bit 6
+     _bitIs USIBR7   \ USI Buffer Register bit 7
+
+BitsIn USIDR \ USI Data Register
+     _bitIs USIDR0   \ USI Data Register bit 0
+     _bitIs USIDR1   \ USI Data Register bit 1
+     _bitIs USIDR2   \ USI Data Register bit 2
+     _bitIs USIDR3   \ USI Data Register bit 3
+     _bitIs USIDR4   \ USI Data Register bit 4
+     _bitIs USIDR5   \ USI Data Register bit 5
+     _bitIs USIDR6   \ USI Data Register bit 6
+     _bitIs USIDR7   \ USI Data Register bit 7
+
+BitsIn USISR \ USI Status Register
+     _bitIs USICNT0   \ USI Counter Value Bit 0
+     _bitIs USICNT1   \ USI Counter Value Bit 1
+     _bitIs USICNT2   \ USI Counter Value Bit 2
+     _bitIs USICNT3   \ USI Counter Value Bit 3
+     _bitIs USIDC     \ Data Output Collision
+     _bitIs USIPF     \ Stop Condition Flag
+     _bitIs USIOIF    \ Counter Overflow Interrupt Flag
+     _bitIs USISIF    \ Start Condition Interrupt Flag
+
+BitsIn USICR \ USI Control Register
+     _bitIs USITC    \ Toggle Clock Port Pin
+     _bitIs USICLK   \ Clock Strobe
+     _bitIs USICS0   \ USI Clock Source Select Bit 0
+     _bitIs USICS1   \ USI Clock Source Select Bit 1
+     _bitIs USIWM0   \ USI Wire Mode Bit 0
+     _bitIs USIWM1   \ USI Wire Mode Bit 1
+     _bitIs USIOIE   \ Counter Overflow Interrupt Enable
+     _bitIs USISIE   \ Start Condition Interrupt Enable
+
+
+\ ***** EEPROM ***********************
+BitsIn EEARL \ EEPROM Address Register Low Byte
+     _bitIs EEAR0   \ EEPROM Read/Write Access Bit 0
+     _bitIs EEAR1   \ EEPROM Read/Write Access Bit 1
+     _bitIs EEAR2   \ EEPROM Read/Write Access Bit 2
+     _bitIs EEAR3   \ EEPROM Read/Write Access Bit 3
+     _bitIs EEAR4   \ EEPROM Read/Write Access Bit 4
+     _bitIs EEAR5   \ EEPROM Read/Write Access Bit 5
+     _bitIs EEAR6   \ EEPROM Read/Write Access Bit 6
+     _bitIs EEAR7   \ EEPROM Read/Write Access Bit 7
+
+BitsIn EEARH \ EEPROM Address Register High Byte
+     _bitIs EEAR8   \ EEPROM Read/Write Access Bit 0
+
+BitsIn EEDR \ EEPROM Data Register
+     _bitIs EEDR0   \ EEPROM Data Register bit 0
+     _bitIs EEDR1   \ EEPROM Data Register bit 1
+     _bitIs EEDR2   \ EEPROM Data Register bit 2
+     _bitIs EEDR3   \ EEPROM Data Register bit 3
+     _bitIs EEDR4   \ EEPROM Data Register bit 4
+     _bitIs EEDR5   \ EEPROM Data Register bit 5
+     _bitIs EEDR6   \ EEPROM Data Register bit 6
+     _bitIs EEDR7   \ EEPROM Data Register bit 7
+
+BitsIn EECR \ EEPROM Control Register
+     _bitIs EERE    \ EEPROM Read Enable
+     _bitIs EEPE    \ EEPROM Write Enable
+     _bitIs EEMPE   \ EEPROM Master Write Enable
+     _bitIs EERIE   \ EEPROM Ready Interrupt Enable
+     _bitIs EEPM0   \ EEPROM Programming Mode Bit 0
+     _bitIs EEPM1   \ EEPROM Programming Mode Bit 1
+
+
+\ ***** WATCHDOG *********************
+BitsIn WDTCR \ Watchdog Timer Control Register
+     _bitIs WDP0    \ Watch Dog Timer Prescaler bit 0
+     _bitIs WDP1    \ Watch Dog Timer Prescaler bit 1
+     _bitIs WDP2    \ Watch Dog Timer Prescaler bit 2
+     _bitIs WDE     \ Watch Dog Enable
+   4 #bitIs WDCE    \ Watchdog Change Enable
+   4 #bitIs WDTOE   \ For compatibility
+   5 #bitIs WDP3    \ Watchdog Timer Prescaler Bit 3
+     _bitIs WDIE    \ Watchdog Timeout Interrupt Enable
+     _bitIs WDIF    \ Watchdog Timeout Interrupt Flag
+
+
+\ ***** TIMER_COUNTER_0 **************
+BitsIn TIMSK \ Timer/Counter Interrupt Mask Register
+     _bitIs TICIE0   \ Timer/Counter0 Input Capture Interrupt Enable
+     _bitIs TOIE0    \ Timer/Counter0 Overflow Interrupt Enable
+   3 #bitIs OCIE0B   \ Timer/Counter0 Output Compare Match B Interrupt Enable
+     _bitIs OCIE0A   \ Timer/Counter0 Output Compare Match A Interrupt Enable
+
+BitsIn TIFR \ Timer/Counter0 Interrupt Flag register
+     _bitIs ICF0   \ Timer/Counter0 Input Capture Flag
+     _bitIs TOV0   \ Timer/Counter0 Overflow Flag
+     _bitIs OCF0B  \ Timer/Counter0 Output Compare Flag 0B
+     _bitIs OCF0A  \ Timer/Counter0 Output Compare Flag 0A
+
+BitsIn TCCR0A \ Timer/Counter  Control Register A
+    3 #bitIs ACIC0  \ Analog Comparator Input Capture Enable
+     _bitIs ICES0   \ Input Capture Edge Select
+     _bitIs ICNC0   \ Input Capture Noice Canceler
+     _bitIs ICEN0   \ Input Capture Mode Enable
+     _bitIs TCW0    \ Timer/Counter 0 Width
+
+BitsIn TCCR0B \ Timer/Counter Control Register B
+     _bitIs CS00   \ Clock Select
+     _bitIs CS01   \ Clock Select
+     _bitIs CS02   \ Clock Select
+     _bitIs PSR0   \ Timer/Counter 0 Prescaler Reset
+     _bitIs TSM    \ Timer/Counter Synchronization Mode
+
+BitsIn TCNT0H \ Timer/Counter0 High
+     _bitIs TCNT0H_0   \
+     _bitIs TCNT0H_1   \
+     _bitIs TCNT0H_2   \
+     _bitIs TCNT0H_3   \
+     _bitIs TCNT0H_4   \
+     _bitIs TCNT0H_5   \
+     _bitIs TCNT0H_6   \
+     _bitIs TCNT0H_7   \
+
+BitsIn TCNT0L \ Timer/Counter0 Low
+     _bitIs TCNT0_0   \ 
+     _bitIs TCNT0_1   \ 
+     _bitIs TCNT0_2   \ 
+     _bitIs TCNT0_3   \ 
+     _bitIs TCNT0_4   \ 
+     _bitIs TCNT0_5   \ 
+     _bitIs TCNT0_6   \ 
+     _bitIs TCNT0_7   \ 
+
+BitsIn OCR0A \ Timer/Counter0 Output Compare Register
+     _bitIs OCR0_0   \ 
+     _bitIs OCR0_1   \ 
+     _bitIs OCR0_2   \ 
+     _bitIs OCR0_3   \ 
+     _bitIs OCR0_4   \ 
+     _bitIs OCR0_5   \ 
+     _bitIs OCR0_6   \ 
+     _bitIs OCR0_7   \ 
+
+BitsIn OCR0B \ Timer/Counter0 Output Compare Register
+     _bitIs OCR0B_0   \
+     _bitIs OCR0B_1   \
+     _bitIs OCR0B_2   \
+     _bitIs OCR0B_3   \
+     _bitIs OCR0B_4   \
+     _bitIs OCR0B_5   \
+     _bitIs OCR0B_6   \
+     _bitIs OCR0B_7   \
+
+
+\ ***** TIMER_COUNTER_1 **************
+BitsIn TCCR1A \ Timer/Counter Control Register A
+     _bitIs PWM1B   \ Pulse Width Modulator Enable
+     _bitIs PWM1A   \ Pulse Width Modulator Enable
+     _bitIs FOC1B   \ Force Output Compare Match 1B
+     _bitIs FOC1A   \ Force Output Compare Match 1A
+     _bitIs COM1B0  \ Compare Output Mode, Bit 0
+     _bitIs COM1B1  \ Compare Output Mode, Bit 1
+     _bitIs COM1A0  \ Compare Output Mode, Bit 1
+     _bitIs COM1A1  \ Compare Output Mode, Bit 0
+
+BitsIn TCCR1B \ Timer/Counter Control Register B
+     _bitIs CS10   \ Clock Select Bits
+     _bitIs CS11   \ Clock Select Bits
+     _bitIs CS12   \ Clock Select Bits
+     _bitIs CS13   \ Clock Select Bits
+     _bitIs DTPS10 \ Dead Time Prescaler
+     _bitIs DTPS11 \ Dead Time Prescaler
+     _bitIs PSR1   \ Timer/Counter 1 Prescaler reset
+
+BitsIn TCCR1C \ Timer/Counter Control Register C
+     _bitIs PWM1D   \ Pulse Width Modulator D Enable
+     _bitIs FOC1D   \ Force Output Compare Match 1D
+     _bitIs COM1D0  \ Comparator D output mode
+     _bitIs COM1D1  \ Comparator D output mode
+     _bitIs COM1B0S \ COM1B0 Shadow Bit
+     _bitIs COM1B1S \ COM1B1 Shadow Bit
+     _bitIs COM1A0S \ COM1A0 Shadow Bit
+     _bitIs COM1A1S \ COM1A1 Shadow Bit
+
+BitsIn TCCR1D \ Timer/Counter Control Register D
+     _bitIs WGM10   \ Waveform Generation Mode Bit
+     _bitIs WGM11   \ Waveform Generation Mode Bit
+     _bitIs FPF1    \ Fault Protection Interrupt Flag
+     _bitIs FPAC1   \ Fault Protection Analog Comparator Enable
+     _bitIs FPES1   \ Fault Protection Edge Select
+     _bitIs FPNC1   \ Fault Protection Noise Canceler
+     _bitIs FPEN1   \ Fault Protection Mode Enable
+     _bitIs FPIE1   \ Fault Protection Interrupt Enable
+
+BitsIn TCCR1E \ Timer/Counter1 Control Register E
+     _bitIs OC1OE0   \ Ouput Compare Override Enable Bit 0
+     _bitIs OC1OE1   \ Ouput Compare Override Enable Bit 1
+     _bitIs OC1OE2   \ Ouput Compare Override Enable Bit 2
+     _bitIs OC1OE3   \ Ouput Compare Override Enable Bit 3
+     _bitIs OC1OE4   \ Ouput Compare Override Enable Bit 4
+     _bitIs OC1OE5   \ Ouput Compare Override Enable Bit 5
+
+BitsIn TCNT1 \ Timer/Counter Register
+     _bitIs TC1H_0   \ Timer/Counter Register Bit 0
+     _bitIs TC1H_1   \ Timer/Counter Register Bit 1
+     _bitIs TC1H_2   \ Timer/Counter Register Bit 2
+     _bitIs TC1H_3   \ Timer/Counter Register Bit 3
+     _bitIs TC1H_4   \ Timer/Counter Register Bit 4
+     _bitIs TC1H_5   \ Timer/Counter Register Bit 5
+     _bitIs TC1H_6   \ Timer/Counter Register Bit 6
+     _bitIs TC1H_7   \ Timer/Counter Register Bit 7
+
+BitsIn TC1H \ Timer/Counter 1 Register High
+     _bitIs TC18   \ Timer/Counter Register Bit 0
+     _bitIs TC19   \ Timer/Counter Register Bit 1
+
+BitsIn OCR1A \ Output Compare Register
+     _bitIs OCR1A0   \ Output Compare Register A Bit 0
+     _bitIs OCR1A1   \ Output Compare Register A Bit 1
+     _bitIs OCR1A2   \ Output Compare Register A Bit 2
+     _bitIs OCR1A3   \ Output Compare Register A Bit 3
+     _bitIs OCR1A4   \ Output Compare Register A Bit 4
+     _bitIs OCR1A5   \ Output Compare Register A Bit 5
+     _bitIs OCR1A6   \ Output Compare Register A Bit 6
+     _bitIs OCR1A7   \ Output Compare Register A Bit 7
+
+BitsIn OCR1B \ Output Compare Register
+     _bitIs OCR1B0   \ Output Compare Register B Bit 0
+     _bitIs OCR1B1   \ Output Compare Register B Bit 1
+     _bitIs OCR1B2   \ Output Compare Register B Bit 2
+     _bitIs OCR1B3   \ Output Compare Register B Bit 3
+     _bitIs OCR1B4   \ Output Compare Register B Bit 4
+     _bitIs OCR1B5   \ Output Compare Register B Bit 5
+     _bitIs OCR1B6   \ Output Compare Register B Bit 6
+     _bitIs OCR1B7   \ Output Compare Register B Bit 7
+
+BitsIn OCR1C \ Output compare register
+     _bitIs OCR1C0   \ 
+     _bitIs OCR1C1   \ 
+     _bitIs OCR1C2   \ 
+     _bitIs OCR1C3   \ 
+     _bitIs OCR1C4   \ 
+     _bitIs OCR1C5   \ 
+     _bitIs OCR1C6   \ 
+     _bitIs OCR1C7   \ 
+
+BitsIn OCR1D \ Output compare register
+     _bitIs OCR1D0   \ 
+     _bitIs OCR1D1   \ 
+     _bitIs OCR1D2   \ 
+     _bitIs OCR1D3   \ 
+     _bitIs OCR1D4   \ 
+     _bitIs OCR1D5   \ 
+     _bitIs OCR1D6   \ 
+     _bitIs OCR1D7   \ 
+
+BitsIn TIMSK \ Timer/Counter Interrupt Mask Register
+    2 #bitIs TOIE1    \ Timer/Counter1 Overflow Interrupt Enable
+    5 #bitIs OCIE1B   \ OCIE1A: Timer/Counter1 Output Compare B Interrupt Enable
+      _bitIs OCIE1A   \ OCIE1A: Timer/Counter1 Output Compare Interrupt Enable
+      _bitIs OCIE1D   \ OCIE1D: Timer/Counter1 Output Compare Interrupt Enable
+
+BitsIn TIFR \ Timer/Counter Interrupt Flag Register
+    2 #bitIs TOV1    \ Timer/Counter1 Overflow Flag
+    5 #bitIs OCF1B   \ Timer/Counter1 Output Compare Flag 1B
+      _bitIs OCF1A   \ Timer/Counter1 Output Compare Flag 1A
+      _bitIs OCF1D   \ Timer/Counter1 Output Compare Flag 1D
+
+BitsIn DT1 \ Timer/Counter 1 Dead Time Value
+     _bitIs DT1L0   \ 
+     _bitIs DT1L1   \ 
+     _bitIs DT1L2   \ 
+     _bitIs DT1L3   \ 
+     _bitIs DT1H0   \ 
+     _bitIs DT1H1   \ 
+     _bitIs DT1H2   \ 
+     _bitIs DT1H3   \ 
+
+
+\ ***** BOOT_LOAD ********************
+BitsIn SPMCSR \ Store Program Memory Control Register
+     _bitIs SPMEN   \ Store Program Memory Enable
+     _bitIs PGERS   \ Page Erase
+     _bitIs PGWRT   \ Page Write
+     _bitIs RFLB    \ Read fuse and lock bits
+     _bitIs CTPB    \ Clear temporary page buffer
+
+
+\ ***** EXTERNAL_INTERRUPT ***********
+BitsIn GIMSK \ General Interrupt Mask Register
+    4 #bitIs PCIE0   \ Pin Change Interrupt Enable 0
+      _bitIs PCIE1   \ Pin Change Interrupt Enable 1
+      _bitIs INT0    \ External Interrupt Request 0 Enable
+      _bitIs INT1    \ External Interrupt Request 1 Enable
+
+BitsIn GIFR \ General Interrupt Flag register
+    5 #bitIs PCIF   \ Pin Change Interrupt Flag
+      _bitIs INTF0  \ External Interrupt Flag 0
+      _bitIs INTF1  \ External Interrupt Flag 1
+
+BitsIn PCMSK0 \ Pin Change Enable Mask 0
+     _bitIs PCINT0  \ Pin Change Enable Mask Bit 0
+     _bitIs PCINT1  \ Pin Change Enable Mask Bit 1
+     _bitIs PCINT2  \ Pin Change Enable Mask Bit 2
+     _bitIs PCINT3  \ Pin Change Enable Mask Bit 3
+     _bitIs PCINT4  \ Pin Change Enable Mask Bit 4
+     _bitIs PCINT5  \ Pin Change Enable Mask Bit 5
+     _bitIs PCINT6  \ Pin Change Enable Mask Bit 6
+     _bitIs PCINT7  \ Pin Change Enable Mask Bit 7
+
+BitsIn PCMSK1 \ Pin Change Enable Mask 1
+     _bitIs PCINT8  \ Pin Change Enable Mask Bit 8
+     _bitIs PCINT9  \ Pin Change Enable Mask Bit 9
+     _bitIs PCINT10 \ Pin Change Enable Mask Bit 10
+     _bitIs PCINT11 \ Pin Change Enable Mask Bit 11
+     _bitIs PCINT12 \ Pin Change Enable Mask Bit 12
+     _bitIs PCINT13 \ Pin Change Enable Mask Bit 13
+     _bitIs PCINT14 \ Pin Change Enable Mask Bit 14
+     _bitIs PCINT15 \ Pin Change Enable Mask Bit 15
+
+
+\ ***** CPU **************************
+BitsIn SREG \ Status Register
+     _bitIs SREG_C   \ Carry Flag
+     _bitIs SREG_Z   \ Zero Flag
+     _bitIs SREG_N   \ Negative Flag
+     _bitIs SREG_V   \ Two's Complement Overflow Flag
+     _bitIs SREG_S   \ Sign Bit
+     _bitIs SREG_H   \ Half Carry Flag
+     _bitIs SREG_T   \ Bit Copy Storage
+     _bitIs SREG_I   \ Global Interrupt Enable
+
+BitsIn SPL \ Stack Pointer Low Byte
+     _bitIs SP0   \ Stack Pointer Bit 0
+     _bitIs SP1   \ Stack Pointer Bit 1
+     _bitIs SP2   \ Stack Pointer Bit 2
+     _bitIs SP3   \ Stack Pointer Bit 3
+     _bitIs SP4  
+     _bitIs SP5   \ Stack Pointer Bit 5
+     _bitIs SP6   \ Stack Pointer Bit 6
+     _bitIs SP7   \ Stack Pointer Bit 7
+
+BitsIn MCUCR \ MCU Control Register
+      _bitIs ISC00 \ Interrupt Sense Control 0 bit 0
+      _bitIs ISC01 \ Interrupt Sense Control 0 bit 1
+    3 #bitIs SM0   \ Sleep Mode Select Bit 0
+      _bitIs SM1   \ Sleep Mode Select Bit 1
+      _bitIs SE    \ Sleep Enable
+      _bitIs PUD   \ Pull-up Disable
+
+BitsIn MCUSR \ MCU Status register
+     _bitIs PORF   \ Power-On Reset Flag
+     _bitIs EXTRF  \ External Reset Flag
+     _bitIs BORF   \ Brown-out Reset Flag
+     _bitIs WDRF   \ Watchdog Reset Flag
+
+BitsIn PRR \ Power Reduction Register
+     _bitIs PRADC   \ Power Reduction ADC
+     _bitIs PRUSI   \ Power Reduction USI
+     _bitIs PRTIM0  \ Power Reduction Timer/Counter0
+     _bitIs PRTIM1  \ Power Reduction Timer/Counter1
+
+BitsIn OSCCAL \ Oscillator Calibration Register
+     _bitIs CAL0   \ Oscillatro Calibration Value Bit 0
+     _bitIs CAL1   \ Oscillatro Calibration Value Bit 1
+     _bitIs CAL2   \ Oscillatro Calibration Value Bit 2
+     _bitIs CAL3   \ Oscillatro Calibration Value Bit 3
+     _bitIs CAL4   \ Oscillatro Calibration Value Bit 4
+     _bitIs CAL5   \ Oscillatro Calibration Value Bit 5
+     _bitIs CAL6   \ Oscillatro Calibration Value Bit 6
+     _bitIs CAL7   \ Oscillatro Calibration Value Bit 7
+
+BitsIn PLLCSR \ PLL Control and status register
+     _bitIs PLOCK  \ PLL Lock detector
+     _bitIs PLLE   \ PLL Enable
+     _bitIs PCKE   \ PCK Enable
+   7 #bitIs LSM    \ Low speed mode
+
+BitsIn CLKPR \ Clock Prescale Register
+     _bitIs CLKPS0   \ Clock Prescaler Select Bit 0
+     _bitIs CLKPS1   \ Clock Prescaler Select Bit 1
+     _bitIs CLKPS2   \ Clock Prescaler Select Bit 2
+     _bitIs CLKPS3   \ Clock Prescaler Select Bit 3
+   7 #bitIs CLKPCE   \ Clock Prescaler Change Enable
+
+BitsIn DWDR \ debugWire data register
+     _bitIs DWDR0   \ 
+     _bitIs DWDR1   \ 
+     _bitIs DWDR2   \ 
+     _bitIs DWDR3   \ 
+     _bitIs DWDR4   \ 
+     _bitIs DWDR5   \ 
+     _bitIs DWDR6   \ 
+     _bitIs DWDR7   \ 
+
+BitsIn GPIOR2 \ General Purpose IO register 2
+     _bitIs GPIOR20   \ 
+     _bitIs GPIOR21   \ 
+     _bitIs GPIOR22   \ 
+     _bitIs GPIOR23   \ 
+     _bitIs GPIOR24   \ 
+     _bitIs GPIOR25   \ 
+     _bitIs GPIOR26   \ 
+     _bitIs GPIOR27   \ 
+
+BitsIn GPIOR1 \ General Purpose register 1
+     _bitIs GPIOR10   \ 
+     _bitIs GPIOR11   \ 
+     _bitIs GPIOR12   \ 
+     _bitIs GPIOR13   \ 
+     _bitIs GPIOR14   \ 
+     _bitIs GPIOR15   \ 
+     _bitIs GPIOR16   \ 
+     _bitIs GPIOR17   \ 
+
+BitsIn GPIOR0 \ General purpose register 0
+     _bitIs GPIOR00   \ 
+     _bitIs GPIOR01   \ 
+     _bitIs GPIOR02   \ 
+     _bitIs GPIOR03   \ 
+     _bitIs GPIOR04   \ 
+     _bitIs GPIOR05   \ 
+     _bitIs GPIOR06   \ 
+     _bitIs GPIOR07   \ 
+
+
+
+\ ***** END OF FILE ******************************************************
+
+\ Набор инструкций микроконтроллера ATtiny261
+\ Система обозначения операндов в основном совпадает с фирменной документацией,
+\ но для большей информативности и различимости, введены дополнительные.
+\ Rr    - регистр общего назначения (РОН), R[0...31]
+\ Rd    - регистр общего назначения, R[0...31]
+\ Rdr   - частный случай, когда Rd=Rr
+\ R'd   - старшие регистры, R[16...31]
+\ R"d   - чётные регистры, R[2,4,...30]
+\ R*d   - регистровые пары, R[24,26,28,30]
+\ b     - бит в РОН или порту, доступный для битовых команд
+\ sb    - бит в системном регистре SREG 
+\ k     - абсолютный адрес в пространстве ROM, всегда >0
+\ -k    - относительный адрес, может быть отрицательным
+\ (k)   - абсолютный адрес в пространстве RAM
+\ A     - адрес в пространстве ввода-вывода, 0<=A<=31 (или 32<=(k)<=63 в RAM)
+\ !K!   - байт маски, при ассемблировании инвертируется
+\ K!    - байт, константа
+
+\ ------------------------------------------------------------------------------
+\ первое opcode (последнее при поиске) в цепи - заглушка
+\ ------------------------------------------------------------------------------
+cmd: ?unknown?  ?.   ;  Opcode: ................    \ заглушка        
+\ порядок следования команд в этом списке в основном совпадает с документацией,
+\ но похожие команды должны следовать от большего числа параметров к меньшим.
+
+\ арифметические и логические операции
+cmd: ADD    Rd, Rr   ;  Opcode: 000011rdddddrrrr    \ Суммирование без переноса | Rd=Rd + Rr 
+cmd: ADC    Rd, Rr   ;  Opcode: 000111rdddddrrrr    \ Суммирование с переносом | Rd=Rd + Rr + C
+cmd: ADIW   R*d, K!  ;  Opcode: 10010110KKddKKKK    \ Сложить константу и слово | Rdh:Rdl=Rdh:Rdl + K6 
+cmd: SUB    Rd, Rr   ;  Opcode: 000110rdddddrrrr    \ Вычитание без переноса | Rd=Rd - Rr
+cmd: SUBI   R'd, K!  ;  Opcode: 0101KKKKddddKKKK    \ Вычитание константы | Rd=Rd - K8
+cmd: SBC    Rd, Rr   ;  Opcode: 000010rdddddrrrr    \ Вычитание с переносом | Rd=Rd - Rr - C
+cmd: SBCI   R'd, K!  ;  Opcode: 0100KKKKddddKKKK    \ Вычитание константы с переносом | Rd=Rd - K8 - C
+cmd: SBIW   R*d, K!  ;  Opcode: 10010111KKddKKKK    \ Вычесть константу из слова | Rdh:Rdl=Rdh:Rdl - K6
+cmd: AND    Rd, Rr   ;  Opcode: 001000rdddddrrrr    \ Логическое И | Rd=Rd · Rr
+cmd: CBR    R'd, !K! ;  Opcode: 0111KKKKddddKKKK    \ Сбросить бит (биты) в регистре | Rd=Rd · ($FF - K8)
+cmd: ANDI   R'd, K!  ;  Opcode: 0111KKKKddddKKKK    \ Логическое И с константой | Rd=Rd · K8
+cmd: OR     Rd, Rr   ;  Opcode: 001010rdddddrrrr    \ Логическое ИЛИ | Rd=Rd V Rr
+cmd: SBR    R'd, K!  ;  Opcode: 0110KKKKddddKKKK    \ Установить бит (биты) в регистре | Rd=Rd V K8
+cmd: ORI    R'd, K!  ;  Opcode: 0110KKKKddddKKKK    \ Логическое ИЛИ с константой | Rd=Rd V K8
+cmd: EOR    Rd, Rr   ;  Opcode: 001001rdddddrrrr    \ Логическое исключающее ИЛИ | Rd=Rd EOR Rr
+cmd: COM    Rd       ;  Opcode: 1001010ddddd0000    \ Побитная Инверсия | Rd=$FF - Rd
+cmd: NEG    Rd       ;  Opcode: 1001010ddddd0001    \ Изменение знака (Доп. код) | Rd=$00 - Rd
+cmd: INC    Rd       ;  Opcode: 1001010ddddd0011    \ Инкрементировать значение регистра | Rd=Rd + 1
+cmd: DEC    Rd       ;  Opcode: 1001010ddddd1010    \ Декрементировать значение регистра | Rd=Rd -1
+cmd: TST    Rdr      ;  Opcode: 001000rdddddrrrr    \ Проверка на ноль либо отрицательность | Rd=Rd · Rd
+cmd: CLR    Rdr      ;  Opcode: 001001rdddddrrrr    \ Очистить регистр | Rd=0
+cmd: SER    R'd      ;  Opcode: 11101111dddd1111    \ Установить регистр | Rd=$FF
+
+\ передача управления
+cmd: RJMP   -k       ;  Opcode: 1100kkkkkkkkkkkk    \ Относительный переход | PC=PC + k +1
+cmd: IJMP            ;  Opcode: 1001010000001001    \ Косвенный переход на (Z) | PC=Z
+cmd: RCALL  -k       ;  Opcode: 1101kkkkkkkkkkkk    \ Относительный вызов подпрограммы | STACK=PC+1, PC=PC + k + 1
+cmd: ICALL           ;  Opcode: 1001010100001001    \ Косвенный вызов (Z) | STACK=PC+1, PC=Z 
+cmd: RET             ;  Opcode: 1001010100001000    \ Возврат из подпрограммы | PC=STACK
+cmd: RETI            ;  Opcode: 1001010100011000    \ Возврат из прерывания | PC=STACK
+cmd: CPSE   Rd, Rr   ;  Opcode: 000100rdddddrrrr    \ Сравнить, пропустить если равны | if (Rd==Rr) PC=PC 2 or 3
+cmd: CP     Rd, Rr   ;  Opcode: 000101rdddddrrrr    \ Сравнить | Rd -Rr
+cmd: CPC    Rd, Rr   ;  Opcode: 000001rdddddrrrr    \ Сравнить с переносом | Rd - Rr - C
+cmd: CPI    R'd, K!  ;  Opcode: 0011KKKKddddKKKK    \ Сравнить с константой | Rd - K
+cmd: SBRC   Rr, b    ;  Opcode: 1111110rrrrr0bbb    \ Пропустить если бит в регистре очищен |if(Rr(b)==0) PC=PC + 2 or 3
+cmd: SBRS   Rr, b    ;  Opcode: 1111111rrrrr0bbb    \ Пропустить если бит в регистре установлен | if(Rr(b)==1) PC=PC + 2 or 3   
+cmd: SBIC   A,  b    ;  Opcode: 10011001AAAAAbbb    \ Пропустить если бит в порту очищен | if(I/O(P,b)==0) PC=PC + 2 or 3
+cmd: SBIS   A,  b    ;  Opcode: 10011011AAAAAbbb    \ Пропустить если бит в порту установлен | if(I/O(P,b)==1) PC=PC + 2 or 3
+cmd: BRBS   sb, -k   ;  Opcode: 111100kkkkkkksss    \ Перейти если флаг в SREG установлен | if(SREG(s)==1) PC=PC + k + 1
+cmd: BRBC   sb, -k   ;  Opcode: 111101kkkkkkksss    \ Перейти если флаг в SREG очищен | if(SREG(s)==0) PC=PC + k + 1
+cmd: BREQ   -k       ;  Opcode: 111100kkkkkkk001    \ Перейти если равно | if(Z==1) PC=PC + k + 1
+cmd: BRNE   -k       ;  Opcode: 111101kkkkkkk001    \ Перейти если не равно | if(Z==0) PC=PC + k + 1
+cmd: BRLO   -k       ;  Opcode: 111100kkkkkkk000    \ Перейти если меньше | if(C==1) PC=PC + k + 1
+cmd: BRCS   -k       ;  Opcode: 111100kkkkkkk000    \ Перейти если перенос установлен | if(C==1) PC=PC + k + 1
+cmd: BRSH   -k       ;  Opcode: 111101kkkkkkk000    \ Перейти если равно или больше | if(C==0) PC=PC + k + 1
+cmd: BRCC   -k       ;  Opcode: 111101kkkkkkk000    \ Перейти если перенос очищен | if(C==0) PC=PC + k + 1
+cmd: BRMI   -k       ;  Opcode: 111100kkkkkkk010    \ Перейти если минус | if(N==1) PC=PC + k + 1
+cmd: BRPL   -k       ;  Opcode: 111101kkkkkkk010    \ Перейти если плюс | if(N==0) PC=PC + k + 1
+cmd: BRGE   -k       ;  Opcode: 111101kkkkkkk100    \ Перейти если больше или равно (со знаком) | if(S==0) PC=PC + k + 1
+cmd: BRLT   -k       ;  Opcode: 111100kkkkkkk100    \ Перейти если меньше нуля (со знаком) | if(S==1) PC=PC + k + 1
+cmd: BRHS   -k       ;  Opcode: 111100kkkkkkk101    \ Перейти если флаг внутреннего переноса установлен | if(H==1) PC=PC + k + 1
+cmd: BRHC   -k       ;  Opcode: 111101kkkkkkk101    \ Перейти если флаг внутреннего переноса очищен | if(H==0) PC=PC + k + 1
+cmd: BRTS   -k       ;  Opcode: 111100kkkkkkk110    \ Перейти если флаг T установлен | if(T==1) PC=PC + k + 1
+cmd: BRTC   -k       ;  Opcode: 111101kkkkkkk110    \ Перейти если флаг T очищен | if(T==0) PC=PC + k + 1
+cmd: BRVS   -k       ;  Opcode: 111100kkkkkkk011    \ Перейти если флаг переполнения установлен | if(V==1) PC=PC + k + 1
+cmd: BRVC   -k       ;  Opcode: 111101kkkkkkk011    \ Перейти если флаг переполнения очищен | if(V==0) PC=PC + k + 1
+cmd: BRIE   -k       ;  Opcode: 111100kkkkkkk111    \ Перейти если прерывания разрешены | if(I==1) PC=PC + k + 1
+cmd: BRID   -k       ;  Opcode: 111101kkkkkkk111    \ Перейти если прерывания запрещены | if(I==0) PC=PC + k + 1
+
+\ перемещение данных
+cmd: MOV    Rd, Rr   ;  Opcode: 001011rdddddrrrr    \ Скопировать регистр | Rd=Rr
+cmd: MOVW   R"d, R"r ;  Opcode: 00000001ddddrrrr    \ Скопировать пару регистров | Rd+1:Rd=Rr+1:Rr, r,d чётные
+cmd: LDI    R'd, K!  ;  Opcode: 1110KKKKddddKKKK    \ Загрузить константу | Rd=K
+cmd: LD     Rd, X+   ;  Opcode: 1001000ddddd1101    \ Косвенная загрузка с пост-инкрементом | Rd=(X), X=X+1
+cmd: LD     Rd, -X   ;  Opcode: 1001000ddddd1110    \ Косвенная загрузка с пре-декрементом | X=X-1, Rd=(X)
+cmd: LD     Rd, X    ;  Opcode: 1001000ddddd1100    \ Косвенная загрузка | Rd=(X)
+cmd: LDD    Rd, Y+q  ;  Opcode: 10q0qq0ddddd1qqq    \ Косвенная загрузка со смещением | Rd=(Y+q) 
+cmd: LD     Rd, Y+   ;  Opcode: 1001000ddddd1001    \ Косвенная загрузка с пост-инкрементом | Rd=(Y), Y=Y+1
+cmd: LD     Rd, -Y   ;  Opcode: 1001000ddddd1010    \ Косвенная загрузка с пре-декрементом | Y=Y-1, Rd=(Y)
+cmd: LD     Rd, Y    ;  Opcode: 1000000ddddd1000    \ Косвенная загрузка | Rd=(Y)
+cmd: LDD    Rd, Z+q  ;  Opcode: 10q0qq0ddddd0qqq    \ Косвенная загрузка со смещением | Rd=(Z+q) 
+cmd: LD     Rd, Z+   ;  Opcode: 1001000ddddd0001    \ Косвенная загрузка с пост-инкрементом | Rd=(Z), Z=Z+1
+cmd: LD     Rd, -Z   ;  Opcode: 1001000ddddd0010    \ Косвенная загрузка с пре-декрементом | Z=Z-1, Rd=(Z)
+cmd: LD     Rd, Z    ;  Opcode: 1000000ddddd0000    \ Косвенная загрузка | Rd=(Z)
+cmd: LDS    Rd, (k)  ;  Opcode: 1001000ddddd0000 ext: kkkkkkkkkkkkkkkk \ Прямая загрузка | Rd=(k)
+cmd: ST     X+, Rr   ;  Opcode: 1001001rrrrr1101    \ Косвенное сохранение с пост-инкрементом | (X)=Rr, X=X+1
+cmd: ST     -X, Rr   ;  Opcode: 1001001rrrrr1110    \ Косвенное сохранение с пре-декрементом | X=X-1, (X)=Rr
+cmd: ST     X,  Rr   ;  Opcode: 1001001rrrrr1100    \ Косвенное сохранение | (X)=Rr
+cmd: STD    Y+q, Rr  ;  Opcode: 10q0qq1rrrrr1qqq    \ Косвенное сохранение со смещением | (Y+q)=Rr
+cmd: ST     Y+, Rr   ;  Opcode: 1001001rrrrr1001    \ Косвенное сохранение с пост-инкрементом | (Y)=Rr, Y=Y+1 
+cmd: ST     -Y, Rr   ;  Opcode: 1001001rrrrr1010    \ Косвенное сохранение с пре-декрементом | Y=Y-1, (Y)=Rr 
+cmd: ST     Y,  Rr   ;  Opcode: 1000001rrrrr1000    \ Косвенное сохранение | (Y)=Rr
+cmd: STD    Z+q, Rr  ;  Opcode: 10q0qq1rrrrr0qqq    \ Косвенное сохранение со смещением | (Z+q)=Rr
+cmd: ST     Z+, Rr   ;  Opcode: 1001001rrrrr0001    \ Косвенное сохранение с пост-инкрементом | (Z)=Rr, Z=Z+1 
+cmd: ST     -Z, Rr   ;  Opcode: 1001001rrrrr0010    \ Косвенное сохранение с пре-декрементом | Z=Z-1, (Z)=Rr
+cmd: ST     Z,  Rr   ;  Opcode: 1000001rrrrr0000    \ Косвенное сохранение | (Z)=Rr
+cmd: STS    (k), Rr  ;  Opcode: 1001001rrrrr0000 ext: kkkkkkkkkkkkkkkk \ Прямое сохранение | (k)=Rr
+cmd: LPM    Rd, Z+   ;  Opcode: 1001000ddddd0101    \ Загрузка из программной памяти с пост-инкрементом | Rd=(Z), Z=Z+1
+cmd: LPM    Rd, Z    ;  Opcode: 1001000ddddd0100    \ Загрузка из программной памяти | Rd=(Z)
+cmd: LPM             ;  Opcode: 1001010111001000    \ Загрузка из программной памяти | R0=(Z)
+cmd: SPM    Z+       ;  Opcode: 1001010111111000    \ Сохранение в программной памяти с постинкрементом | (Z)=R1:R0 | Z=Z+1
+cmd: SPM             ;  Opcode: 1001010111101000    \ Сохранение в программной памяти | (Z)=R1:R0
+cmd: IN     Rd, A    ;  Opcode: 10110AAdddddAAAA    \ Чтение порта | Rd=P
+cmd: OUT    A,  Rr   ;  Opcode: 10111AArrrrrAAAA    \ Запись в порт | P=Rr
+cmd: PUSH   Rr       ;  Opcode: 1001001rrrrr1111    \ Занесение регистра в стек | STACK=Rr
+cmd: POP    Rd       ;  Opcode: 1001000ddddd1111    \ Извлечение регистра из стека | Rd=STACK
+
+\ битовые операции
+cmd: SBI    A,  b    ;  Opcode: 10011010AAAAAbbb    \ Установить бит в порту | I/O(P,b)=1
+cmd: CBI    A,  b    ;  Opcode: 10011000AAAAAbbb    \ Очистить бит в порту | I/O(P,b)=0
+cmd: LSL    Rdr      ;  Opcode: 000011rdddddrrrr    \ Логический сдвиг влево | Rd(n+1)=Rd(n), Rd(0)=0, C=Rd(7)
+cmd: LSR    Rd       ;  Opcode: 1001010ddddd0110    \ Логический сдвиг вправо | Rd(n)=Rd(n+1), Rd(7)=0, C=Rd(0)
+cmd: ROL    Rdr      ;  Opcode: 000111rdddddrrrr    \ Циклический сдвиг влево через C | Rd(0)=C, Rd(n+1)=Rd(n), C=Rd(7)
+cmd: ROR    Rd       ;  Opcode: 1001010ddddd0111    \ Циклический сдвиг вправо через C | Rd(7)=C, Rd(n)=Rd(n+1), C=Rd(0)
+cmd: ASR    Rd       ;  Opcode: 1001010ddddd0101    \ Арифметический сдвиг вправо | Rd(n)=Rd(n+1), n=0,...,6
+cmd: SWAP   Rd       ;  Opcode: 1001010ddddd0010    \ Перестановка тетрад | Rd(3..0)=Rd(7..4), Rd(7..4)=Rd(3..0)
+cmd: BSET   sb       ;  Opcode: 100101000sss1000    \ Установка флага | SREG(s)=1
+cmd: BCLR   sb       ;  Opcode: 100101001sss1000    \ Очистка флага | SREG(s)=0
+cmd: BST    Rd, b    ;  Opcode: 1111101ddddd0bbb    \ Сохранить бит из регистра в T | T=Rr(b)
+cmd: BLD    Rd, b    ;  Opcode: 1111100ddddd0bbb    \ Загрузить бит из T в регистр | Rd(b)=T
+cmd: SEC             ;  Opcode: 1001010000001000    \ Установить флаг переноса | C=1
+cmd: CLC             ;  Opcode: 1001010010001000    \ Очистить флаг переноса | C=0
+cmd: SEN             ;  Opcode: 1001010000101000    \ Очистить флаг отрицательного числа | N=1
+cmd: CLN             ;  Opcode: 1001010010101000    \ Очистить флаг отрицательного числа | N=0
+cmd: SEZ             ;  Opcode: 1001010000011000    \ Установить флаг нуля | Z=1
+cmd: CLZ             ;  Opcode: 1001010010011000    \ Очистить флаг нуля | Z=0
+cmd: SEI             ;  Opcode: 1001010001111000    \ Установить флаг прерываний | I=1
+cmd: CLI             ;  Opcode: 1001010011111000    \ Очистить флаг прерываний | I=0
+cmd: SES             ;  Opcode: 1001010001001000    \ Установить флаг числа со знаком | S=1
+cmd: CLS             ;  Opcode: 1001010011001000    \ Очистить флаг числа со знаком | S=0
+cmd: SEV             ;  Opcode: 1001010000111000    \ Установить флаг переполнения | V=1
+cmd: CLV             ;  Opcode: 1001010010111000    \ Очистить флаг переполнения | V=0
+cmd: SET             ;  Opcode: 1001010001101000    \ Установить флаг T | T=1
+cmd: CLT             ;  Opcode: 1001010011101000    \ Очистить флаг T | T=0 
+cmd: SEH             ;  Opcode: 1001010001011000    \ Установить флаг внутреннего переноса | H=1
+cmd: CLH             ;  Opcode: 1001010011011000    \ Очистить флаг внутреннего переноса | H=0
+
+\ системные
+cmd: NOP             ;  Opcode: 0000000000000000    \ Нет операции  
+cmd: SLEEP           ;  Opcode: 1001010110001000    \ Спать (уменьшить энергопотребление)  
+cmd: WDR             ;  Opcode: 1001010110101000    \ Сброс сторожевого таймера  
+
+\ остальные
+cmd: BREAK           ;  Opcode: 1001010110011000    \ Останов для отладки  
+
+
+

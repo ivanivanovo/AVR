@@ -1,0 +1,501 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"P",
+				"PORT"
+			],
+			[
+				"C",
+				"CONSTANT"
+			],
+			[
+				"TR",
+				"Tred"
+			],
+			[
+				"NO",
+				"NOTFOUND2"
+			],
+			[
+				"TH",
+				"THROW"
+			],
+			[
+				"2D",
+				"2DROP"
+			],
+			[
+				"IF",
+				"IF"
+			],
+			[
+				"ski",
+				"skip_b"
+			],
+			[
+				"M",
+				"Mig"
+			],
+			[
+				"по",
+				"половых"
+			],
+			[
+				"fo",
+				"for	for (...) {...}"
+			],
+			[
+				"tr",
+				"tran	translate(...) {...}"
+			],
+			[
+				"strop",
+				"Strop()"
+			],
+			[
+				"бр",
+				"бревна"
+			],
+			[
+				"tran",
+				"translate"
+			],
+			[
+				"mod",
+				"module"
+			],
+			[
+				"st",
+				"StRow"
+			],
+			[
+				"ci",
+				"custslider	Customizer Slider"
+			],
+			[
+				"c",
+				"col	color"
+			],
+			[
+				"t",
+				"translate"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "/home/ivanov/AVR/selectAVR.f",
+			"settings":
+			{
+				"buffer_size": 3837,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/ivanov/AVR/AVR_instructions.set",
+			"settings":
+			{
+				"buffer_size": 15793,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/libs/fasm/~iva/AVR/selectAVR.fs",
+			"settings":
+			{
+				"buffer_size": 3887,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "SPFORTH",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 180.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"htm",
+				"Set Syntax: HTML"
+			],
+			[
+				"pci",
+				"Package Control: Install Package"
+			],
+			[
+				"pc",
+				"Package Control: List Packages"
+			]
+		],
+		"width": 392.0
+	},
+	"console":
+	{
+		"height": 307.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+	],
+	"file_history":
+	[
+		"/home/ivanov/AVR/chips/tn44Adef.inc",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/libs/fasm/~iva/AVR/chips/tn44.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/libs/fasm/~iva/AVR/chips/tn24.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/libs/fasm/~iva/AVR/chips/tn84.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/libs/fasm/~iva/AVR/chips/ATtiny24-44-84.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/apps/interface/memomaps.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/apps/interface/taskPower.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/apps/interface/interface.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/apps/interface/iwProtocol.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/libs/i-wire/iw-packs.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/include/iw-decomp.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/include/iw-comp.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/libs/fasm/~iva/AVR/prog.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/libs/fasm/~iva/AVR/ПирамидаAVR.txt",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/libs/fasm/~iva/AVR/AVRISP_mk2.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/libs/fasm/~iva/AVR/programmers.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/libs/fasm/~iva/AVR/ISPprog.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/libs/fasm/~iva/AVR/Xprog.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/libs/fasm/~iva/AVR/chips/xModules.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/apps/interface/RTC.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/apps/interface/res.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/include/defs.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/apps/interface/path.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/include/iwUSB.fs",
+		"/home/ivanov/spf-4.20/devel/~ygrek/spf/included.f",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/kicad-libs/ER32-6-25.kicad_mod",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/hardware/kicad/i/module3/trans_block.pro",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/hardware/kicad/i/module2/cerebellum2x2/cerebellum2x2.pro",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/apps/interface/eye.sublime-project",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/apps/interface/Desc.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/apps/interface/USBtask.fs",
+		"/home/ivanov/AVR/AVRset.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/apps/interface/iw5Drive.fs",
+		"/home/ivanov/AVR/AVRset.f",
+		"/media/BSERIES_270710/Readme.txt",
+		"/home/ivanov/.config/sublime-text-3/Packages/Default/Preferences.sublime-settings",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/Баня/baniy_.scad",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/Баня/banay.sublime-project",
+		"/home/ivanov/.config/sublime-text-3/Packages/Default/Default (Linux).sublime-keymap",
+		"/home/ivanov/.config/sublime-text-2/Packages/Default/Preferences.sublime-settings",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/apps/monocle/path.fs",
+		"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/apps/monocle/monocle.fs",
+		"/home/ivanov/.config/sublime-text-2/Packages/User/Preferences.sublime-settings",
+		"/home/ivanov/.config/sublime-text-2/Packages/XML/XML.tmLanguage"
+	],
+	"find":
+	{
+		"height": 36.0
+	},
+	"find_in_files":
+	{
+		"height": 102.0,
+		"where_history":
+		[
+			"<project>",
+			"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/apps/interface",
+			"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/libs/fasm/~iva/AVR",
+			"/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/apps/interface",
+			"/home/ivanov/spf-4.20"
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"DTPS",
+			"GTCCR",
+			"DDRB",
+			"PB",
+			"PORTB",
+			"TCCR1B",
+			"USBdevs",
+			"IOREG",
+			"StartMon",
+			"MARKER",
+			"usb_control>",
+			"closeUsbDev",
+			"findDevices",
+			"100%",
+			"dest",
+			"]>u",
+			"bytes2hex",
+			"Down?",
+			"USBtrans>",
+			"#Hey#",
+			"Buf!",
+			"Memo@",
+			"Buf!",
+			"Page!",
+			"WriteChip",
+			"TheProg",
+			"...",
+			"..",
+			"FirstVoc",
+			"Name.Dot",
+			"theDot",
+			"WARNING",
+			"(width 0.05)",
+			"F.SilkS",
+			"Takt125K",
+			"USB",
+			"size",
+			"fiwRxOK",
+			"translate",
+			"translate([0,0,d1/2])",
+			"бревна",
+			"upshift",
+			"200",
+			"240",
+			"translate",
+			"0",
+			"//\n",
+			"echo",
+			"brevno",
+			"		}",
+			"cylinder",
+			"lang"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"DDRA",
+			"PA",
+			"PORTA",
+			"(width 0.01)",
+			"Edge.Cuts",
+			"d1",
+			"240"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "/home/ivanov/AVR/selectAVR.f",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3837,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2399,
+								2399
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Forth.tmbundle/Syntaxes/Forth.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 180.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "/home/ivanov/AVR/AVR_instructions.set",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 15793,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								11783,
+								11783
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 2100.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 2,
+					"file": "/home/ivanov/IvaMobi2/Person/Job/Projects/EnSol/ensol/beq/libs/fasm/~iva/AVR/selectAVR.fs",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3887,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2387,
+								2387
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Forth.tmbundle/Syntaxes/Forth.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 180.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 30.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			],
+			[
+				1,
+				0,
+				2,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			0.481031416716,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 377.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "Packages/User/spf.sublime-build",
+	"project": "chips.sublime-project",
+	"replace":
+	{
+		"height": 66.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 438.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"",
+				"~/IvaMobi2/Person/Job/Projects/Velo/АКБ/Li-Ion/Энергоблок/ebox2/prog/arh/cels_logs.sublime-project"
+			]
+		],
+		"width": 333.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 192.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

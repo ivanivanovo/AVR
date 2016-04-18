@@ -1,0 +1,1935 @@
+\ ***************************************************************************
+\ **  описание переферийных модулей семейства xMega
+\ ***************************************************************************
+\ для удобства доступа к регистрам разных модулей или разных экземпляров модулей
+\ используются вложенные списки смещений
+\ Элемент списка:
+\    связь       link   \ указатель на следующий элемент этого списка
+\    значение    _Port: \ смещение
+\    ветка       branch \ указатель на другой список
+\    имя         cname  \ строка со счетчиком
+\ способы доступа:
+\ Например есть модуль DMA, у него есть свои регистры ( CTRL, INTFLAGS, STATUS, TEMP) 
+\ и 4 канала: CH0, CH1, CH2, CH3), каждый из которых имеет:
+\ (CTRLA, CTRLB, ADDRCTRL, TRIGSRC, TRFCNT, REPCNT, SRCADDR0, SRCADDR1, SRCADDR2, DESTADDR0, DESTADDR1, DESTADDR2)
+\ К каждому регистру нужен доступ по абсолютному адресу (LDIW Y,CH2_TRFCNT) и по относительному (LDD Y+,_TRFCNT).
+\ запись вида DMA.CH2.TRFCNT можно разчленить по любой точке в имени на две части (голова и хвост)
+\ DMA      .CH2.TRFCNT
+\ DMA.CH2  .TRFCNT
+\ Если часть начинается с точки (.CH2.TRFCNT), то на стек ляжет сумма смещений в ней (относительный адрес).
+\ Если с двух точек (..CH2.TRFCNT), то прибавится еще сумма с головы, т.е. получится абсолютный адрес.
+\ Если часть оканчивается точкой (DMA.) то значение запомнится для использования последующими частями (начинающимися с двух точек).
+\ Так же запоминается место с которого продолжится поиск имен из хвоста (начинающимися с точки).
+\ Если в конце нет точки, то ничего запоминаться не будет, просто на стеке появится значение.
+\ Работает с длинными цепочками типа "имя.имя1.имя2.имя3" и т.д.
+
+TRUE TO LowFirstRW \ младший байт читается И записывается первым
+
+
+\ реализация поиска в списках через NOTFOUND
+: dotless ( adr u -- ) \ заменить все точки в строке пробелами
+        OVER + SWAP DO I C@ [CHAR] . = IF BL I C! THEN LOOP
+    ;
+0 VALUE theDot \ метка попытки точечной обработки
+
+: RunDot ( -- )
+    TRUE TO theDot
+    SAVE-VOCS
+    ALSO
+    ;
+: StopDot ( -- )
+    FALSE TO theDot
+    RESTORE-VOCS
+    ;    
+0 VALUE .Dot?  \ флаг ведущей точки
+0 VALUE ..Dot? \ флаг ведущих точек
+0 VALUE Dot.?  \ флаг конечной точки
+0 VALUE HeadValue \ базовое значение
+0 VALUE FirstVoc  \ wid стартового словаря поиска
+
+: Dots? ( adr u -- ) \ установка флагов
+        \ начальная .точка
+        OVER C@ [CHAR] . = TO .Dot?
+        \ начальные ..точки 
+        OVER 1+ C@ [CHAR] . = .Dot? AND TO ..Dot? 
+        \ конечная точка.
+         + 1- C@ [CHAR] . = TO Dot.?
+    ; \    
+: .. HeadValue ;
+: Name.Dot ( adr u -- u' ) \ обработка цепочек имен 
+    2DUP Dots? \ установить флаги пред. и пост. обработки
+    >S S@ dotless \ обработке подвергается копия строки
+    RunDot \ изменить окружение
+        \ предобработка
+        .Dot?  IF GET-ORDER FirstVoc SWAP 1+ SET-ORDER 0  \ добавить словарь поиска
+        ..Dot? IF HeadValue + THEN THEN
+        \ основная обработка
+        S> EVALUATE   \ интерпретировать штатным интерпретатором
+        \ постобработка
+        Dot.?  IF GET-ORDER OVER TO FirstVoc SET-ORDER \ запомнить начальный словарь поиска
+                  DUP TO HeadValue \ запомнить головное значение
+               THEN
+    StopDot \ востановить окружение
+    ;
+
+WARNING @ FALSE WARNING !
+: NOTFOUND ( adr u -- ) \ попытка обработать ненайденное слово, как цепочку имен
+    2DUP >S ['] NOTFOUND CATCH ?DUP \ попытка вызова предыдущего обработчика
+    IF  NIP NIP \ неудачно
+        S>  
+        theDot \ защита от рекурсии 
+        IF \ была неудачная попытка
+            StopDot
+            2DROP THROW 
+        ELSE 
+            Name.Dot NIP 
+        THEN
+    ELSE S> 2DROP \ удачно - убрать мусор
+    THEN
+    ;
+WARNING !
+
+: _bit ( adrReg #bit -- 8*adrReg + #bit ) \ описание бита с учетом адреса регистра
+    SWAP 3 LSHIFT + 
+    ;
+: _vector_offset ( base offset -- 2*[base+offset]) \ получить адрес вектора в байтах    
+    + 2* 
+    ;
+: WITH DROP ;
+
+\ ***************************************************************************
+\ ** GPIO - General Purpose IO Registers
+\ ***************************************************************************
+\ общее имя типа: "GPIO.15"
+: GPIO_ BL PARSE  EVALUATE DUP 0 15 BETH 0= ABORT" Неверное обращение к GPIO."
+    +  ; \ 
+\ *****************************************************************************
+\ *          VPORTs - Virtual Ports                                                            
+\ *****************************************************************************
+MODULE: VPORT_
+    MODULE: INTFLAGS_
+        : INT0IF 0 _bit ;
+        : INT1IF 1 _bit ;
+        ;MODULE
+    : DIR  0 + ; \   
+    : OUT  1 + ; \  
+    : IN   2 + ; \ 
+    : INTFLAGS 3 + INTFLAGS_ ;
+    ;MODULE
+\ **************************************************************************
+\ * OCD - On-Chip Debug System
+\ **************************************************************************
+MODULE: OCD_
+        : R0 0 +  ; \     \ OCD Register 0
+        : R1 1 +  ; \      \ OCD Register 1
+;MODULE
+\ **************************************************************************
+\ * CPU - CPU
+\ **************************************************************************
+MODULE: CPU_
+    : CCP   0x04 + ; \        \ Configuration Change Protection
+    : RAMPD 0x08 + ; \        \ Ramp D
+    : RAMPX 0x09 + ; \        \ Ramp X
+    : RAMPY 0x0A + ; \        \ Ramp Y
+    : RAMPZ 0x0B + ; \        \ Ramp Z
+    : EIND  0x0C + ; \        \ Extended Indirect Jump
+    : SPL   0x0D + ; \        \ Stack Pointer Low
+    : SPH   0x0E + ; \        \ Stack Pointer High
+    : SREG  0x0F + ; \       \ Status Register
+    ;MODULE
+\ CCP signatures
+0x9D CONSTANT CCP_SPM \ SPM Instruction Protection
+0xD8 CONSTANT CCP_IOREG \ IO Register Protection
+\ **************************************************************************
+\ * CLK - Clock System
+\ **************************************************************************
+MODULE: CLK_
+    MODULE: CTRL_
+        : SCLKSEL0 0 _Bit ; \ System Clock Selection bit 0 position
+        : SCLKSEL1 1 _Bit ; \ System Clock Selection bit 1 position
+        : SCLKSEL2 2 _Bit ; \ System Clock Selection bit 2 position
+        ;MODULE
+    MODULE: PSCTRL_
+		: PSADIV0 2 _Bit ;   \ Prescaler A Division Factor bit 0 position
+		: PSADIV1 3 _Bit ;   \ Prescaler A Division Factor bit 1 position
+		: PSADIV2 4 _Bit ;   \ Prescaler A Division Factor bit 2 position
+		: PSADIV3 5 _Bit ;   \ Prescaler A Division Factor bit 3 position
+		: PSADIV4 6 _Bit ;   \ Prescaler A Division Factor bit 4 position
+		: PSBCDIV0 0 _Bit ;  \ Prescaler B and C Division factor bit 0 position
+		: PSBCDIV1 1 _Bit ;  \ Prescaler B and C Division factor bit 1 position
+        ;MODULE
+    MODULE: LOCK_
+        : LOCK 0 _Bit ;      \ Clock System Lock bit position
+        ;MODULE
+    MODULE: RTCCTRL_
+		: RTCSRC0 1 _Bit ;  \ Clock Source bit 0 position
+		: RTCSRC1 2 _Bit ;  \ Clock Source bit 1 position
+		: RTCSRC2 3 _Bit ;  \ Clock Source bit 2 position
+		: RTCEN 0 _Bit ;    \ Clock Source Enable bit position
+        ;MODULE
+    MODULE: USBCTRL_
+		: USBPSDIV0 3 _Bit ;  \ Prescaler Division Factor bit 0 position
+		: USBPSDIV1 4 _Bit ;  \ Prescaler Division Factor bit 1 position
+		: USBPSDIV2 5 _Bit ;  \ Prescaler Division Factor bit 2 position
+		: USBSRC0 1 _Bit ;    \ Clock Source bit 0 position
+		: USBSRC1 2 _Bit ;    \ Clock Source bit 1 position
+		: USBSEN 0 _Bit ;     \ Clock Source Enable bit position
+        ;MODULE
+    : CTRL 0 + CTRL_ ; \          \ Control Register
+    : PSCTRL 0x01 + PSCTRL_ ; \   \ Prescaler Control Register
+    : LOCK 0x02 + LOCK_ ; \       \ Lock register
+    : RTCCTRL 0x03 + RTCCTRL_ ; \ RTC Control Register
+    : USBCTRL 0x04 + USBCTRL_ ; \ USB Control Register
+    ;MODULE
+\ **************************************************************************
+\ * PR - Power Reduction
+\ **************************************************************************
+MODULE: PR_
+    MODULE: GEN_
+        : USB   6 _Bit ;   \ USB bit position
+        : AES   4 _Bit ;   \ AES bit position
+        : EBI   3 _Bit ;   \ External Bus Interface bit position
+        : RTC   2 _Bit ;   \ Real-time Counter bit position
+        : EVSYS 1 _Bit ;   \ Event System bit position
+        : DMA   0 _Bit ;   \ DMA-Controller bit position
+        ;MODULE
+    MODULE: PAB_ ; \ биты в регистрах
+        : DAC   2 _Bit ;   \ Port A DAC bit position
+        : ADC   1 _Bit ;   \ Port A ADC bit position
+        : AC    0 _Bit ;   \ Port A Analog Comparator bit position   
+        ;MODULE
+    MODULE: PCF_ ; \ биты в регистрах
+        : TWI       6 _Bit ;   \ Port C Two-wire Interface bit position
+        : USART1    5 _Bit ;   \ Port C USART1 bit position
+        : USART0    4 _Bit ;   \ Port C USART0 bit position
+        : SPI       3 _Bit ;   \ Port C SPI bit position
+        : HIRES     2 _Bit ;   \ Port C AWEX bit position
+        : TC1       1 _Bit ;   \ Port C Timer/Counter1 bit position
+        : TC0       0 _Bit ;   \ Port C Timer/Counter0 bit position
+        ;MODULE
+    : GEN 0x00 + GEN_ ; \   
+    : PA  0x01 + PAB_ ; \ 
+    : PB  0x02 + PAB_ ; \    
+    : PC  0x03 + PCF_ ; \    
+    : PD  0x04 + PCF_ ; \     
+    : PE  0x05 + PCF_ ; \     
+    : PF  0x06 + PCF_ ; \     
+;MODULE
+\ **************************************************************************
+\ * SLEEP - Sleep Controller
+\ **************************************************************************/
+MODULE: SLEEP_
+     MODULE: CTRL_
+        : SMODE0 1 _Bit ;  \ S leep Mode bit 0 position
+        : SMODE1 2 _Bit ;  \ S leep Mode bit 1 position
+        : SMODE2 3 _Bit ;  \ S leep Mode bit 2 position
+        : SEN    0 _Bit ;  \ S leep Enable bit position
+        ;MODULE
+    : CTRL 0x00	 + CTRL_ ;	\ Control Register
+    ;MODULE
+\ **************************************************************************
+\ * OSC - Oscillator
+\ **************************************************************************/
+MODULE: OSC_
+    MODULE: CTRL_
+        : PLLEN 4 _Bit ;  \ PLL Enable bit position
+        : XOSCEN 3 _Bit ;    \ External Oscillator Enable bit position
+        : RC32KEN 2 _Bit ;   \ Internal 32.768 kHz RC Oscillator Enable bit position
+        : RC32MEN 1 _Bit ;   \ Internal 32 MHz RC Oscillator Enable bit position
+        : RC2MEN 0 _Bit ;    \ Internal 2 MHz RC Oscillator Enable bit position
+        ;MODULE
+    MODULE: STATUS_ 
+        : PLLRDY 4 _Bit ;    \ PLL Ready bit position
+        : XOSCRDY 3 _Bit ;   \ External Oscillator Ready bit position
+        : RC32KRDY 2 _Bit ;  \ Internal 32.768 kHz RC Oscillator Ready bit position
+        : RC32MRDY 1 _Bit ;  \ Internal 32 MHz RC Oscillator Ready bit position
+        : RC2MRDY 0 _Bit ;   \ Internal 2 MHz RC Oscillator Ready bit position
+        ;MODULE
+   MODULE: XOSCCTRL_ 
+        : FRQRANGE0 6 _Bit ;  \ Frequency Range bit 0 position
+        : FRQRANGE1 7 _Bit ;  \ Frequency Range bit 1 position
+        : X32KLPM 5 _Bit ;  \ 32.768 kHz XTAL OSC Low-power Mode bit position
+        : XOSCPWR 4 _Bit ;  \ 16 MHz Crystal Oscillator High Power mode bit position
+        : XOSCSEL0 0 _Bit ;  \ External Oscillator Selection and Startup Time bit 0 position
+        : XOSCSEL1 1 _Bit ;  \ External Oscillator Selection and Startup Time bit 1 position
+        : XOSCSEL2 2 _Bit ;  \ External Oscillator Selection and Startup Time bit 2 position
+        : XOSCSEL3 3 _Bit ;  \ External Oscillator Selection and Startup Time bit 3 position
+        ;MODULE
+   MODULE: XOSCFAIL_ 
+        : PLLFDIF 3 _Bit ;  \ PLL Failure Detection Interrupt Flag bit position
+        : PLLFDEN 2 _Bit ;  \ PLL Failure Detection Enable bit position
+        : XOSCFDIF 1 _Bit ;  \ XOSC Failure Detection Interrupt Flag bit position
+        : XOSCFDEN 0 _Bit ;  \ XOSC Failure Detection Enable bit position
+        ;MODULE
+
+   MODULE: PLLCTRL_ 
+        : PLLSRC0 6 _Bit ;  \ Clock Source bit 0 position
+        : PLLSRC1 7 _Bit ;  \ Clock Source bit 1 position
+        : PLLDIV 5 _Bit ;  \ Divide by 2 bit position
+        : PLLFAC0 0 _Bit ;  \ Multiplication Factor bit 0 position
+        : PLLFAC1 1 _Bit ;  \ Multiplication Factor bit 1 position
+        : PLLFAC2 2 _Bit ;  \ Multiplication Factor bit 2 position
+        : PLLFAC3 3 _Bit ;  \ Multiplication Factor bit 3 position
+        : PLLFAC4 4 _Bit ;  \ Multiplication Factor bit 4 position
+        ;MODULE
+
+   MODULE: DFLLCTRL_ 
+        : RC32MCREF0 1 _Bit ;  \ 32 MHz DFLL Calibration Reference bit 0 position
+        : RC32MCREF1 2 _Bit ;  \ 32 MHz DFLL Calibration Reference bit 1 position
+        : RC2MCREF 0 _Bit ;  \ 2 MHz DFLL Calibration Reference bit position
+        ;MODULE
+
+    : CTRL 0x00	 + CTRL_ ;	\ Control Register
+    : STATUS 0x01 + STATUS_ ; \ Status Register
+    : XOSCCTRL 0x02 + XOSCCTRL_ ; \ External Oscillator Control Register
+    : XOSCFAIL 0x03 + XOSCFAIL_ ; \ Oscillator Failure Detection Register
+    : RC32KCAL 0x04 + ; \ 32.768 kHz Internal Oscillator Calibration Register
+    : PLLCTRL 0x05 + PLLCTRL_ ; \ PLL Control Register
+    : DFLLCTRL 0x06 + DFLLCTRL_ ; \ DFLL Control Register
+    \  OSC interrupt vectors
+    : F> 0 _vector_offset ; \ PLL and external oscillator failure interrupt vector (NMI)
+    ;MODULE
+\ **************************************************************************
+\ * DFLL - DFLL
+\ **************************************************************************/
+MODULE: DFLL_
+    MODULE: CTRL_ 
+        : ENABLE 0 _Bit ;  \ DFLL Enable bit position
+        ;MODULE
+    MODULE: CALA_ 
+        : CALL0 0 _Bit ;  \ DFLL Calibration Value A bit 0 position
+        : CALL1 1 _Bit ;  \ DFLL Calibration Value A bit 1 position
+        : CALL2 2 _Bit ;  \ DFLL Calibration Value A bit 2 position
+        : CALL3 3 _Bit ;  \ DFLL Calibration Value A bit 3 position
+        : CALL4 4 _Bit ;  \ DFLL Calibration Value A bit 4 position
+        : CALL5 5 _Bit ;  \ DFLL Calibration Value A bit 5 position
+        : CALL6 6 _Bit ;  \ DFLL Calibration Value A bit 6 position
+        ;MODULE
+    MODULE: CALB_ 
+        : CALH0 0 _Bit ;  \ DFLL Calibration Value B bit 0 position
+        : CALH1 1 _Bit ;  \ DFLL Calibration Value B bit 1 position
+        : CALH2 2 _Bit ;  \ DFLL Calibration Value B bit 2 position
+        : CALH3 3 _Bit ;  \ DFLL Calibration Value B bit 3 position
+        : CALH4 4 _Bit ;  \ DFLL Calibration Value B bit 4 position
+        : CALH5 5 _Bit ;  \ DFLL Calibration Value B bit 5 position
+        ;MODULE
+    : CTRL 0x00 + CTRL_ ;	\ Control Register
+    : CALA 0x02 + CALA_ ;	\ Calibration Register A
+    : CALB 0x03	 + CALB_ ;	\ Calibration Register B
+    : COMP0 0x04 +  ;	\ Oscillator Compare Register 0
+    : COMP1 0x05 +  ;	\ Oscillator Compare Register 1
+    : COMP2 0x06 +  ;	\ Oscillator Compare Register 2
+    ;MODULE
+\ **************************************************************************
+\ * RST - Reset
+\ **************************************************************************/
+MODULE: RST_
+    MODULE: STATUS_
+        : SDRF 6 _Bit ;  \ Spike Detection Reset Flag bit position
+        : SRF 5 _Bit ;  \ Software Reset Flag bit position
+        : PDIRF 4 _Bit ;  \ Programming and Debug Interface Interface Reset Flag bit position
+        : WDRF 3 _Bit ;  \ Watchdog Reset Flag bit position
+        : BORF 2 _Bit ;  \ Brown-out Reset Flag bit position
+        : EXTRF 1 _Bit ;  \ External Reset Flag bit position
+        : PORF 0 _Bit ;  \ Power-on Reset Flag bit position
+        ;MODULE
+
+    MODULE: CTRL_
+        : SWRST 0  _Bit ;  \ Software Reset bit position
+        ;MODULE
+    : STATUS 0x00 + STATUS_ ; \ Status Register
+    : CTRL 0x01 + CTRL_ ; \ Control Register
+    ;MODULE
+
+\ **************************************************************************
+\ * WDT - Watch-Dog Timer
+\ **************************************************************************/
+MODULE: WDT_
+    MODULE: CTRL_
+        : PER0 2 _Bit ;  \ Period bit 0 position
+        : PER1 3 _Bit ;  \ Period bit 1 position
+        : PER2 4 _Bit ;  \ Period bit 2 position
+        : PER3 5 _Bit ;  \ Period bit 3 position
+        : ENABLE 1 _Bit ;  \ Enable bit position
+        : CEN 0 _Bit ;  \ Change Enable bit position
+        ;MODULE
+    MODULE: WINCTRL_
+        : WPER0 2 _Bit ;  \ Windowed Mode Period bit 0 position
+        : WPER1 3 _Bit ;  \ Windowed Mode Period bit 1 position
+        : WPER2 4 _Bit ;  \ Windowed Mode Period bit 2 position
+        : WPER3 5 _Bit ;  \ Windowed Mode Period bit 3 position
+        : WEN 1 _Bit ;  \ Windowed Mode Enable bit position
+        : WCEN 0 _Bit ;  \ Windowed Mode Change Enable bit position
+        ;MODULE
+    MODULE: STATUS_
+        : SYNCBUSY 0 _Bit ;  \ Syncronization busy bit position
+        ;MODULE
+    : CTRL 0x00	    + CTRL_ ;	\ Control
+    : WINCTRL 0x01	+ WINCTRL_ ; \ Windowed Mode Control
+    : STATUS 0x02	+ STATUS_ ; \ Status
+    ;MODULE
+\ **************************************************************************
+\ * MCU - MCU Control
+\ **************************************************************************/
+MODULE: MCU_
+    MODULE: MCUCR_
+        : JTAGD 0 _Bit ;  \ JTAG Disable bit position
+        ;MODULE
+    MODULE: ANAINIT_
+        : STARTUPDLYB0 2 _Bit ;  \ Analog startup delay Port B bit 0 position
+        : STARTUPDLYB1 3 _Bit ;  \ Analog startup delay Port B bit 1 position
+        : STARTUPDLYA0 0 _Bit ;  \ Analog startup delay Port A bit 0 position
+        : STARTUPDLYA1 1 _Bit ;  \ Analog startup delay Port A bit 1 position
+        ;MODULE
+    MODULE: EVSYSLOCK_
+        : EVSYS1LOCK 4 _Bit ;  \ Event Channel 4-7 Lock bit position
+        : EVSYS0LOCK 0 _Bit ;  \ Event Channel 0-3 Lock bit position
+        ;MODULE
+    MODULE: AWEXLOCK_
+        : AWEXFLOCK 3 _Bit ;  \ AWeX on T/C F0 Lock bit position
+        : AWEXELOCK 2 _Bit ;  \ AWeX on T/C E0 Lock bit position
+        : AWEXDLOCK 1 _Bit ;  \ AWeX on T/C D0 Lock bit position
+        : AWEXCLOCK 0 _Bit ;  \ AWeX on T/C C0 Lock bit position
+        ;MODULE
+    : DEVID0 0x00 + ; \ Device ID byte 0
+    : DEVID1 0x01 + ; \ Device ID byte 1
+    : DEVID2 0x02 + ; \ Device ID byte 2
+    : REVID 0x03 + ; \ Revision ID
+    : JTAGUID 0x04 + ; \ JTAG User ID
+    : MCUCR 0x06 + MCUCR_ ; \ MCU Control
+    : ANAINIT 0x07 + ANAINIT_ ; \ Analog Startup Delay
+    : EVSYSLOCK 0x08 + EVSYSLOCK_ ; \ Event System Lock
+    : AWEXLOCK 0x09 + AWEXLOCK_ ; \ AWEX Lock
+    ;MODULE
+\ **************************************************************************
+\ * PMIC - Programmable Multi-level Interrupt Controller
+\ **************************************************************************/
+MODULE: PMIC_
+    MODULE: STATUS_
+        : NMIEX 7 _Bit ;  \ Non-maskable Interrupt Executing bit position
+        : HILVLEX 2 _Bit ;  \ High Level Interrupt Executing bit position
+        : MEDLVLEX 1 _Bit ;  \ Medium Level Interrupt Executing bit position
+        : LOLVLEX 0 _Bit ;  \ Low Level Interrupt Executing bit position
+        ;MODULE
+    MODULE: CTRL_
+        : RREN 7 _Bit ;  \ Round-Robin Priority Enable bit position
+        : IVSEL 6 _Bit ;  \ Interrupt Vector Select bit position
+        : HILVLEN 2 _Bit ;  \ High Level Enable bit position
+        : MEDLVLEN 1 _Bit ;  \ Medium Level Enable bit position
+        : LOLVLEN 0 _Bit ;  \ Low Level Enable bit position
+        ;MODULE
+    : STATUS 0x00 + STATUS_ ; \ Status Register
+    : INTPRI 0x01 + ; \ Interrupt Priority
+    : CTRL 0x02 + CTRL_ ; \ Control Register
+    ;MODULE
+\ **************************************************************************
+\ * PORTCFG - Port Configuration
+\ **************************************************************************/
+MODULE: PORTCFG_
+    MODULE: VPCTRLA_
+        : VP1MAP0 4 _Bit ;  \ Virtual Port 1 Mapping bit 0 position
+        : VP1MAP1 5 _Bit ;  \ Virtual Port 1 Mapping bit 1 position
+        : VP1MAP2 6 _Bit ;  \ Virtual Port 1 Mapping bit 2 position
+        : VP1MAP3 7 _Bit ;  \ Virtual Port 1 Mapping bit 3 position
+        : VP0MAP0 0 _Bit ;  \ Virtual Port 0 Mapping bit 0 position
+        : VP0MAP1 1 _Bit ;  \ Virtual Port 0 Mapping bit 1 position
+        : VP0MAP2 2 _Bit ;  \ Virtual Port 0 Mapping bit 2 position
+        : VP0MAP3 3 _Bit ;  \ Virtual Port 0 Mapping bit 3 position
+        ;MODULE
+    MODULE: VPCTRLB_
+        : VP3MAP0 4 _Bit ;  \ Virtual Port 3 Mapping bit 0 position
+        : VP3MAP1 5 _Bit ;  \ Virtual Port 3 Mapping bit 1 position
+        : VP3MAP2 6 _Bit ;  \ Virtual Port 3 Mapping bit 2 position
+        : VP3MAP3 7 _Bit ;  \ Virtual Port 3 Mapping bit 3 position
+        : VP2MAP0 0 _Bit ;  \ Virtual Port 2 Mapping bit 0 position
+        : VP2MAP1 1 _Bit ;  \ Virtual Port 2 Mapping bit 1 position
+        : VP2MAP2 2 _Bit ;  \ Virtual Port 2 Mapping bit 2 position
+        : VP2MAP3 3 _Bit ;  \ Virtual Port 2 Mapping bit 3 position
+        ;MODULE
+    MODULE: CLKEVOUT_
+        : CLKOUT0 0 _Bit ;  \ Peripheral Clock Output Port bit 0 position
+        : CLKOUT1 1 _Bit ;  \ Peripheral Clock Output Port bit 1 position
+        : CLKOUTSEL0 2 _Bit ;  \ Peripheral Clock Output Select bit 0 position
+        : CLKOUTSEL1 3 _Bit ;  \ Peripheral Clock Output Select bit 1 position
+        : EVOUT0 4 _Bit ;  \ Event Output Port bit 0 position
+        : EVOUT1 5 _Bit ;  \ Event Output Port bit 1 position
+        : RTCOUT 6 _Bit ;  \ RTC Clock Output bit position
+        : CLKEVPIN 7 _Bit ;  \ Peripheral Clock and Event Output pin Select bit position
+        ;MODULE
+    MODULE: EVOUTSEL_
+        : EVOUTSEL0 0 _Bit ;  \ Event Output Select bit 0 position
+        : EVOUTSEL1 1 _Bit ;  \ Event Output Select bit 1 position
+        : EVOUTSEL2 2 _Bit ;  \ Event Output Select bit 2 position
+        ;MODULE     
+
+    : MPCMASK 0x00 + ; \ Multi-pin Configuration Mask
+    : VPCTRLA 0x02 + VPCTRLA_ ; \ Virtual Port Control Register A
+    : VPCTRLB 0x03 + VPCTRLB_ ; \ Virtual Port Control Register B
+    : CLKEVOUT 0x04 + CLKEVOUT_ ; \ Clock and Event Out Register
+    : EVOUTSEL 0x06 + EVOUTSEL_ ; \ Event Output Select
+    ;MODULE
+\ **************************************************************************
+\ * AES - AES Module
+\ **************************************************************************/
+MODULE: AES_
+    MODULE: CTRL_
+        : START 7 _Bit ;  \ Start/Run bit position
+        : AUTO 6 _Bit ;  \ Auto Start Trigger bit position
+        : RESET 5 _Bit ;  \ AES Software Reset bit position
+        : DECRYPT 4 _Bit ;  \ Decryption / Direction bit position
+        : XOR 2 _Bit ;  \ State XOR Load Enable bit position
+        ;MODULE     
+    MODULE: STATUS_
+        : ERROR 7 _Bit ;  \ AES Error bit position
+        : SRIF 0 _Bit ;  \ State Ready Interrupt Flag bit position
+        ;MODULE     
+    MODULE: INTCTRL_
+        : INTLVL0 0 _Bit ;  \ Interrupt level bit 0 position
+        : INTLVL1 1 _Bit ;  \ Interrupt level bit 1 position
+        ;MODULE     
+    : CTRL 0x00 + CTRL_ ; \ AES Control Register
+    : STATUS 0x01 + STATUS_ ; \ AES Status Register
+    : STATE 0x02 + ; \ AES State Register
+    : KEY 0x03 + ; \ AES Key Register
+    : INTCTRL 0x04 + INTCTRL_ ; \ AES Interrupt Control Register
+    \  AES interrupt vectors
+    : INT> 0 _vector_offset ;
+    ;MODULE
+\ **************************************************************************
+\ * CRC - Cyclic Redundancy Checker
+\ **************************************************************************/
+MODULE: CRC_
+    MODULE: CTRL_
+        : RESET0 6 _Bit ;  \ Reset bit 0 position
+        : RESET1 7 _Bit ;  \ Reset bit 1 position
+        : CRC32 5 _Bit ;  \ CRC Mode bit position
+        : SOURCE0 0 _Bit ;  \ Input Source bit 0 position
+        : SOURCE1 1 _Bit ;  \ Input Source bit 1 position
+        : SOURCE2 2 _Bit ;  \ Input Source bit 2 position
+        : SOURCE3 3 _Bit ;  \ Input Source bit 3 position
+        ;MODULE     
+    MODULE: STATUS_
+        : ZERO 1 _Bit ;  \ Zero detection bit position
+        : BUSY 0 _Bit ;  \ Busy bit position
+        ;MODULE     
+    : CTRL 0x00 + CTRL_ ; \ Control Register
+    : STATUS 0x01 + STATUS_ ; \ Status Register
+    : DATAIN 0x03 + ; \ Data Input
+    : CHECKSUM0 0x04 + ; \ Checksum byte 0
+    : CHECKSUM1 0x05 + ; \ Checksum byte 1
+    : CHECKSUM2 0x06 + ; \ Checksum byte 2
+    : CHECKSUM3 0x07 + ; \ Checksum byte 3
+    ;MODULE
+\ **************************************************************************
+\ * VBAT - Battery Backup Module
+\ **************************************************************************/
+MODULE: VBAT_
+    MODULE: CTRL_
+        : HIGHESR 5 _Bit ;  \ 32-kHz Crystal Oscillator High Power Mode bit position
+        : XOSCSEL 4 _Bit ;  \ 32-kHz Crystal Oscillator Output Selection bit position
+        : XOSCEN 3 _Bit ;  \ Crystal Oscillator Enable bit position
+        : XOSCFDEN 2 _Bit ;  \ Crystal Oscillator Failure Detection Monitor Enable bit position
+        : ACCEN 1 _Bit ;  \ Access Enable bit position
+        : RESET 0 _Bit ;  \ Reset bit position
+        ;MODULE     
+    MODULE: STATUS_
+        : BBPWR 7 _Bit ;  \ Battery backup Power bit position
+        : XOSCRDY 3 _Bit ;  \ Crystal Oscillator Ready bit position
+        : XOSCFAIL 2 _Bit ;  \ Crystal Oscillator Failure bit position
+        : BBBORF 1 _Bit ;  \ Battery Backup Brown-Out Reset Flag bit position
+        : BBPORF 0 _Bit ;  \ Battery Backup Power-On Reset Flag bit position
+        ;MODULE     
+    : CTRL 0x00 + CTRL_ ; \ Control Register
+    : STATUS 0x01 + STATUS_ ; \ Status Register
+    : BACKUP0 0x02 + ; \ Backup Register 0
+    : BACKUP1 0x03 + ; \ Backup Register 1
+    ;MODULE
+\ **************************************************************************
+\ * DMA - DMA Controller
+\ **************************************************************************/
+MODULE: DMA_
+    MODULE: CTRL_
+        : ENABLE 7 _Bit ;  \ Enable bit position
+        : RESET 6 _Bit ;  \ Software Reset bit position
+        : DBUFMODE0 2 _Bit ;  \ Double Buffering Mode bit 0 position
+        : DBUFMODE1 3 _Bit ;  \ Double Buffering Mode bit 1 position
+        : PRIMODE0 0 _Bit ;  \ Channel Priority Mode bit 0 position
+        : PRIMODE1 1 _Bit ;  \ Channel Priority Mode bit 1 position
+        ;MODULE     
+    MODULE: INTFLAGS_
+        : CH3ERRIF 7 _Bit ;  \ Channel 3 Block Transfer Error Interrupt Flag bit position
+        : CH2ERRIF 6 _Bit ;  \ Channel 2 Block Transfer Error Interrupt Flag bit position
+        : CH1ERRIF 5 _Bit ;  \ Channel 1 Block Transfer Error Interrupt Flag bit position
+        : CH0ERRIF 4 _Bit ;  \ Channel 0 Block Transfer Error Interrupt Flag bit position
+        : CH3TRNIF 3 _Bit ;  \ Channel 3 Transaction Complete Interrupt Flag bit position
+        : CH2TRNIF 2 _Bit ;  \ Channel 2 Transaction Complete Interrupt Flag bit position
+        : CH1TRNIF 1 _Bit ;  \ Channel 1 Transaction Complete Interrupt Flag bit position
+        : CH0TRNIF 0 _Bit ;  \ Channel 0 Transaction Complete Interrupt Flag bit position
+        ;MODULE     
+    MODULE: STATUS_
+        : CH3BUSY 7 _Bit ;  \ Channel 3 Block Transfer Busy bit position
+        : CH2BUSY 6 _Bit ;  \ Channel 2 Block Transfer Busy bit position
+        : CH1BUSY 5 _Bit ;  \ Channel 1 Block Transfer Busy bit position
+        : CH0BUSY 4 _Bit ;  \ Channel 0 Block Transfer Busy bit position
+        : CH3PEND 3 _Bit ;  \ Channel 3 Block Transfer Pending bit position
+        : CH2PEND 2 _Bit ;  \ Channel 2 Block Transfer Pending bit position
+        : CH1PEND 1 _Bit ;  \ Channel 1 Block Transfer Pending bit position
+        : CH0PEND 0 _Bit ;  \ Channel 0 Block Transfer Pending bit position
+        ;MODULE     
+    MODULE: CH_
+        MODULE: CTRLA_
+            : ENABLE 7 _Bit ;  \ Channel Enable bit position
+            : RESET 6 _Bit ;  \ Channel Software Reset bit position
+            : REPEAT 5 _Bit ;  \ Channel Repeat Mode bit position
+            : TRFREQ 4 _Bit ;  \ Channel Transfer Request bit position
+            : SINGLE 2 _Bit ;  \ Channel Single Shot Data Transfer bit position
+            : BURSTLEN0 0 _Bit ;  \ Channel Transfer Mode bit 0 position
+            : BURSTLEN1 1 _Bit ;  \ Channel Transfer Mode bit 1 position
+            ;MODULE     
+        MODULE: CTRLB_
+            : CHBUSY 7 _Bit ;  \ Block Transfer Busy bit position
+            : CHPEND 6 _Bit ;  \ Block Transfer Pending bit position
+            : ERRIF 5 _Bit ;  \ Block Transfer Error Interrupt Flag bit position
+            : TRNIF 4 _Bit ;  \ Transaction Complete Interrup Flag bit position
+            : ERRINTLVL0 2 _Bit ;  \ Transfer Error Interrupt Level bit 0 position
+            : ERRINTLVL1 3 _Bit ;  \ Transfer Error Interrupt Level bit 1 position
+            : TRNINTLVL0 0 _Bit ;  \ Transaction Complete Interrupt Level bit 0 position
+            : TRNINTLVL1 1 _Bit ;  \ Transaction Complete Interrupt Level bit 1 position
+            ;MODULE     
+        MODULE: ADDRCTRL_
+            : SRCRELOAD0 6 _Bit ;  \ Channel Source Address Reload bit 0 position
+            : SRCRELOAD1 7 _Bit ;  \ Channel Source Address Reload bit 1 position
+            : SRCDIR0 4 _Bit ;  \ Channel Source Address Mode bit 0 position
+            : SRCDIR1 5 _Bit ;  \ Channel Source Address Mode bit 1 position
+            : DESTRELOAD0 2 _Bit ;  \ Channel Destination Address Reload bit 0 position
+            : DESTRELOAD1 3 _Bit ;  \ Channel Destination Address Reload bit 1 position
+            : DESTDIR0 0 _Bit ;  \ Channel Destination Address Mode bit 0 position
+            : DESTDIR1 1 _Bit ;  \ Channel Destination Address Mode bit 1 position
+            ;MODULE     
+        MODULE: TRIGSRC_
+            : TRIGSRC0 0 _Bit ;  \ Channel Trigger Source bit 0 position
+            : TRIGSRC1 1 _Bit ;  \ Channel Trigger Source bit 1 position
+            : TRIGSRC2 2 _Bit ;  \ Channel Trigger Source bit 2 position
+            : TRIGSRC3 3 _Bit ;  \ Channel Trigger Source bit 3 position
+            : TRIGSRC4 4 _Bit ;  \ Channel Trigger Source bit 4 position
+            : TRIGSRC5 5 _Bit ;  \ Channel Trigger Source bit 5 position
+            : TRIGSRC6 6 _Bit ;  \ Channel Trigger Source bit 6 position
+            : TRIGSRC7 7 _Bit ;  \ Channel Trigger Source bit 7 position
+            ;MODULE     
+        : CTRLA 0x00 + CTRLA_ ; \ Channel Control
+        : CTRLB 0x01 + CTRLB_ ; \ Channel Control
+        : ADDRCTRL 0x02 + ADDRCTRL_ ; \ Address Control
+        : TRIGSRC 0x03 + TRIGSRC_ ; \ Channel Trigger Source
+        : TRFCNT 0x04 + ; \ Channel Block Transfer Count
+        : REPCNT 0x06 + ; \ Channel Repeat Count
+        : SRCADDR0 0x08 + ; \ Channel Source Address 0
+        : SRCADDR1 0x09 + ; \ Channel Source Address 1
+        : SRCADDR2 0x0A + ; \ Channel Source Address 2
+        : DESTADDR0 0x0C + ; \ Channel Destination Address 0
+        : DESTADDR1 0x0D + ; \ Channel Destination Address 1
+        : DESTADDR2 0x0E + ; \ Channel Destination Address 2
+        ;MODULE         
+    : CTRL 0x00 + CTRL_ ; \ Control
+    : INTFLAGS 0x03 + INTFLAGS_ ; \ Transfer Interrupt Status
+    : STATUS 0x04 + STATUS_ ; \ Status
+    : TEMP 0x06 + ; \ Temporary Register For 16/24-bit Access
+    : CH0 0x10 + CH_ ; \ DMA Channel 0
+    : CH1 0x20 + CH_ ; \ DMA Channel 1
+    : CH2 0x30 + CH_ ; \ DMA Channel 2
+    : CH3 0x40 + CH_ ; \ DMA Channel 3
+    \  DMA interrupt vectors
+    : CH0> 0 _vector_offset ;
+    : CH1> 2 _vector_offset ;
+    : CH2> 4 _vector_offset ;
+    : CH3> 6 _vector_offset ;
+    ;MODULE     
+
+\ **************************************************************************
+\ * EVSYS - Event System
+\ **************************************************************************
+MODULE: EVSYS_
+    MODULE: CHMUX_
+        : CHMUX0 0 _Bit ;  \ Event Channel 0 Multiplexer bit 0 position
+        : CHMUX1 1 _Bit ;  \ Event Channel 0 Multiplexer bit 1 position
+        : CHMUX2 2 _Bit ;  \ Event Channel 0 Multiplexer bit 2 position
+        : CHMUX3 3 _Bit ;  \ Event Channel 0 Multiplexer bit 3 position
+        : CHMUX4 4 _Bit ;  \ Event Channel 0 Multiplexer bit 4 position
+        : CHMUX5 5 _Bit ;  \ Event Channel 0 Multiplexer bit 5 position
+        : CHMUX6 6 _Bit ;  \ Event Channel 0 Multiplexer bit 6 position
+        : CHMUX7 7 _Bit ;  \ Event Channel 0 Multiplexer bit 7 position
+        ;MODULE         
+    MODULE: CHCTRL__
+        : QDIRM0 5 _Bit ;  \ Quadrature Decoder Index Recognition Mode bit 0 position
+        : QDIRM1 6 _Bit ;  \ Quadrature Decoder Index Recognition Mode bit 1 position
+        : QDIEN 4 _Bit ;  \ Quadrature Decoder Index Enable bit position
+        : QDEN 3 _Bit ;  \ Quadrature Decoder Enable bit position
+        : DIGFILT0 0 _Bit ;  \ Digital Filter bit 0 position
+        : DIGFILT1 1 _Bit ;  \ Digital Filter bit 1 position
+        : DIGFILT2 2 _Bit ;  \ Digital Filter bit 2 position
+        ;MODULE         
+    MODULE: CHCTRL_
+        : DIGFILT0 0 _Bit ;  \ Digital Filter bit 0 position
+        : DIGFILT1 1 _Bit ;  \ Digital Filter bit 1 position
+        : DIGFILT2 2 _Bit ;  \ Digital Filter bit 2 position
+        ;MODULE         
+    : CH0MUX 0x00 + CHMUX_ ; \ Event Channel 0 Multiplexer
+    : CH1MUX 0x01 + CHMUX_ ; \ Event Channel 1 Multiplexer
+    : CH2MUX 0x02 + CHMUX_ ; \ Event Channel 2 Multiplexer
+    : CH3MUX 0x03 + CHMUX_ ; \ Event Channel 3 Multiplexer
+    : CH4MUX 0x04 + CHMUX_ ; \ Event Channel 4 Multiplexer
+    : CH5MUX 0x05 + CHMUX_ ; \ Event Channel 5 Multiplexer
+    : CH6MUX 0x06 + CHMUX_ ; \ Event Channel 6 Multiplexer
+    : CH7MUX 0x07 + CHMUX_ ; \ Event Channel 7 Multiplexer
+    : CH0CTRL 0x08 + CHCTRL__ ; \ Channel 0 Control Register
+    : CH1CTRL 0x09 + CHCTRL_  ; \ Channel 1 Control Register
+    : CH2CTRL 0x0A + CHCTRL__ ; \ Channel 2 Control Register
+    : CH3CTRL 0x0B + CHCTRL_  ; \ Channel 3 Control Register
+    : CH4CTRL 0x0C + CHCTRL__ ; \ Channel 4 Control Register
+    : CH5CTRL 0x0D + CHCTRL_  ; \ Channel 5 Control Register
+    : CH6CTRL 0x0E + CHCTRL_  ; \ Channel 6 Control Register
+    : CH7CTRL 0x0F + CHCTRL_  ; \ Channel 7 Control Register
+    : STROBE 0x10 +  ; \ Event Strobe
+    : DATA 0x11 +  ; \ Event Data
+    ;MODULE     
+\ **************************************************************************
+\ * NVM - Non Volatile Memory Controller
+\ **************************************************************************/
+MODULE: NVM_
+    MODULE: CMD_
+        : CMD0 0 _Bit ;  \ Command bit 0 position
+        : CMD1 1 _Bit ;  \ Command bit 1 position
+        : CMD2 2 _Bit ;  \ Command bit 2 position
+        : CMD3 3 _Bit ;  \ Command bit 3 position
+        : CMD4 4 _Bit ;  \ Command bit 4 position
+        : CMD5 5 _Bit ;  \ Command bit 5 position
+        : CMD6 6 _Bit ;  \ Command bit 6 position
+        ;MODULE         
+    MODULE: CTRLA_
+        : CMDEX 0 _Bit ;  \ Command Execute bit position
+        ;MODULE         
+    MODULE: CTRLB_
+        : EEMAPEN 3 _Bit ;  \ EEPROM Mapping Enable bit position
+        : FPRM 2 _Bit ;  \ Flash Power Reduction Enable bit position
+        : EPRM 1 _Bit ;  \ EEPROM Power Reduction Enable bit position
+        : SPMLOCK 0 _Bit ;  \ SPM Lock bit position
+        ;MODULE         
+    MODULE: INTCTRL_
+        : SPMLVL0 2 _Bit ;  \ SPM Interrupt Level bit 0 position
+        : SPMLVL1 3 _Bit ;  \ SPM Interrupt Level bit 1 position
+        : EELVL0 0 _Bit ;  \ EEPROM Interrupt Level bit 0 position
+        : EELVL1 1 _Bit ;  \ EEPROM Interrupt Level bit 1 position
+        ;MODULE         
+    MODULE: STATUS_
+        : NVMBUSY 7 _Bit ;  \ Non-volatile Memory Busy bit position
+        : FBUSY 6 _Bit ;  \ Flash Memory Busy bit position
+        : EELOAD 1 _Bit ;  \ EEPROM Page Buffer Active Loading bit position
+        : FLOAD 0 _Bit ;  \ Flash Page Buffer Active Loading bit position
+        ;MODULE         
+    MODULE: LOCKBITS_
+        : BLBB0 6 _Bit ;  \ Boot Lock Bits - Boot Section bit 0 position
+        : BLBB1 7 _Bit ;  \ Boot Lock Bits - Boot Section bit 1 position
+        : BLBA0 4 _Bit ;  \ Boot Lock Bits - Application Section bit 0 position
+        : BLBA1 5 _Bit ;  \ Boot Lock Bits - Application Section bit 1 position
+        : BLBAT0 2 _Bit ;  \ Boot Lock Bits - Application Table bit 0 position
+        : BLBAT1 3 _Bit ;  \ Boot Lock Bits - Application Table bit 1 position
+        : LB0 0 _Bit ;  \ Lock Bits bit 0 position
+        : LB1 1  _Bit ; \ Lock Bits bit 1 position
+        ;MODULE         
+
+    : ADDR0 0x00 +  ; \ Address Register 0
+    : ADDR1 0x01 +  ; \ Address Register 1
+    : ADDR2 0x02 +  ; \ Address Register 2
+    : DATA0 0x04 +  ; \ Data Register 0
+    : DATA1 0x05 +  ; \ Data Register 1
+    : DATA2 0x06 +  ; \ Data Register 2
+    : CMD 0x0A + CMD_ ; \ Command
+    : CTRLA 0x0B + CTRLA_ ; \ Control Register A
+    : CTRLB 0x0C + CTRLB_ ; \ Control Register B
+    : INTCTRL 0x0D + INTCTRL_ ; \ Interrupt Control
+    : STATUS 0x0F + STATUS_ ; \ Status
+    : LOCKBITS 0x10 +  ; \ Lock Bits
+    \  NVM interrupt vectors
+    : EE> 0 _vector_offset ;
+    : SPM> 2 _vector_offset ;
+    ;MODULE
+\ **************************************************************************
+\ * ADC - Analog/Digital Converter
+\ **************************************************************************/
+MODULE: ADC_
+    MODULE: CH_
+        MODULE: CTRL_
+            : START 7 _Bit ; \ Channel Start Conversion bit position
+            : GAIN0 2 _Bit ; \ Gain Factor bit 0 position
+            : GAIN1 3 _Bit ; \ Gain Factor bit 1 position
+            : GAIN2 4 _Bit ; \ Gain Factor bit 2 position
+            : INPUTMODE0 0 _Bit ; \ Input Mode Select bit 0 position
+            : INPUTMODE1 1 _Bit ; \ Input Mode Select bit 1 position
+            ;MODULE         
+        MODULE: MUXCTRL_
+            : MUXPOS0 3 _Bit ; \ MUX selection on Positive ADC input bit 0 position
+            : MUXPOS1 4 _Bit ; \ MUX selection on Positive ADC input bit 1 position
+            : MUXPOS2 5 _Bit ; \ MUX selection on Positive ADC input bit 2 position
+            : MUXPOS3 6 _Bit ; \ MUX selection on Positive ADC input bit 3 position
+            : MUXINT0 3 _Bit ; \ MUX selection on Internal ADC input bit 0 position
+            : MUXINT1 4 _Bit ; \ MUX selection on Internal ADC input bit 1 position
+            : MUXINT2 5 _Bit ; \ MUX selection on Internal ADC input bit 2 position
+            : MUXINT3 6 _Bit ; \ MUX selection on Internal ADC input bit 3 position
+            : MUXNEG0 0 _Bit ; \ MUX selection on Negative ADC input bit 0 position
+            : MUXNEG1 1 _Bit ; \ MUX selection on Negative ADC input bit 1 position
+            ;MODULE         
+        MODULE: INTCTRL_
+            : INTMODE0 2 _Bit ; \ Interrupt Mode bit 0 position
+            : INTMODE1 3 _Bit ; \ Interrupt Mode bit 1 position
+            : INTLVL0 0 _Bit ; \ Interrupt Level bit 0 position
+            : INTLVL1 1 _Bit ; \ Interrupt Level bit 1 position
+            ;MODULE         
+        MODULE: INTFLAGS_
+            : IF 0 _Bit ; \ Channel Interrupt Flag bit position
+            ;MODULE         
+        MODULE: SCAN_
+            : OFFSET0 4 _Bit ; \ Positive MUX setting offset bit 0 position
+            : OFFSET1 5 _Bit ; \ Positive MUX setting offset bit 1 position
+            : OFFSET2 6 _Bit ; \ Positive MUX setting offset bit 2 position
+            : OFFSET3 7 _Bit ; \ Positive MUX setting offset bit 3 position
+            : SCANNUM0 0 _Bit ; \ Number of Channels included in scan bit 0 position
+            : SCANNUM1 1 _Bit ; \ Number of Channels included in scan bit 1 position
+            : SCANNUM2 2 _Bit ; \ Number of Channels included in scan bit 2 position
+            : SCANNUM3 3 _Bit ; \ Number of Channels included in scan bit 3 position
+            ;MODULE         
+
+        : CTRL 0x00 + CTRL_ ; \ Control Register
+        : MUXCTRL 0x01 + MUXCTRL_ ; \ MUX Control
+        : INTCTRL 0x02 + INTCTRL_ ; \ Channel Interrupt Control Register
+        : INTFLAGS 0x03 + INTFLAGS_ ; \ Interrupt Flags
+        : RES 0x04 +  ; \ Channel Result
+        : SCAN 0x06 + SCAN_ ; \ Input Channel Scan
+        ;MODULE
+    MODULE: CTRLA_
+        : DMASEL0 6 _Bit ; \ DMA Selection bit 0 position
+        : DMASEL1 7 _Bit ; \ DMA Selection bit 1 position
+        : CH3START 5 _Bit ; \ Channel 3 Start Conversion bit position
+        : CH2START 4 _Bit ; \ Channel 2 Start Conversion bit position
+        : CH1START 3 _Bit ; \ Channel 1 Start Conversion bit position
+        : CH0START 2 _Bit ; \ Channel 0 Start Conversion bit position
+        : FLUSH 1 _Bit ; \ Flush Pipeline bit position
+        : ENABLE 0 _Bit ; \ Enable ADC bit position
+        ;MODULE         
+    MODULE: CTRLB_
+        : IMPMODE 7 _Bit ; \ Gain Stage Impedance Mode bit position
+        : CURRLIMIT0 5 _Bit ; \ Current Limitation bit 0 position
+        : CURRLIMIT1 6 _Bit ; \ Current Limitation bit 1 position
+        : CONMODE 4 _Bit ; \ Conversion Mode bit position
+        : FREERUN 3 _Bit ; \ Free Running Mode Enable bit position
+        : RESOLUTION0 1 _Bit ; \ Result Resolution bit 0 position
+        : RESOLUTION1 2 _Bit ; \ Result Resolution bit 1 position
+        ;MODULE         
+    MODULE: REFCTRL_
+        : REFSEL0 4 _Bit ; \ Reference Selection bit 0 position
+        : REFSEL1 5 _Bit ; \ Reference Selection bit 1 position
+        : REFSEL2 6 _Bit ; \ Reference Selection bit 2 position
+        : BANDGAP 1 _Bit ; \ Bandgap enable bit position
+        : TEMPREF 0 _Bit ; \ Temperature Reference Enable bit position
+        ;MODULE         
+    MODULE: EVCTRL_
+        : SWEEP0 6 _Bit ; \ Channel Sweep Selection bit 0 position
+        : SWEEP1 7 _Bit ; \ Channel Sweep Selection bit 1 position
+        : EVSEL0 3 _Bit ; \ Event Input Select bit 0 position
+        : EVSEL1 4 _Bit ; \ Event Input Select bit 1 position
+        : EVSEL2 5 _Bit ; \ Event Input Select bit 2 position
+        : EVACT0 0 _Bit ; \ Event Action Select bit 0 position
+        : EVACT1 1 _Bit ; \ Event Action Select bit 1 position
+        : EVACT2 2 _Bit ; \ Event Action Select bit 2 position
+        ;MODULE         
+    MODULE: PRESCALER_
+        : PRESCALER0 0 _Bit ; \ Clock Prescaler Selection bit 0 position
+        : PRESCALER1 1 _Bit ; \ Clock Prescaler Selection bit 1 position
+        : PRESCALER2 2 _Bit ; \ Clock Prescaler Selection bit 2 position
+        ;MODULE         
+    MODULE: INTFLAGS_
+        : CH3IF 3 _Bit ; \ Channel 3 Interrupt Flag bit position
+        : CH2IF 2 _Bit ; \ Channel 2 Interrupt Flag bit position
+        : CH1IF 1 _Bit ; \ Channel 1 Interrupt Flag bit position
+        : CH0IF 0 _Bit ; \ Channel 0 Interrupt Flag bit position
+        ;MODULE         
+
+    : CTRLA 0x00 + CTRLA_ ; \ Control Register A
+    : CTRLB 0x01 + CTRLB_ ; \ Control Register B
+    : REFCTRL 0x02 + REFCTRL_ ; \ Reference Control
+    : EVCTRL 0x03 + EVCTRL_ ; \ Event Control
+    : PRESCALER 0x04 + PRESCALER_ ; \ Clock Prescaler
+    : INTFLAGS 0x06 + INTFLAGS_ ; \ Interrupt Flags
+    : TEMP 0x07 +  ; \ Temporary Register
+    : CAL 0x0C +  ; \ Calibration Value
+    : CH0RES 0x10 +  ; \ Channel 0 Result
+    : CH1RES 0x12 +  ; \ Channel 1 Result
+    : CH2RES 0x14 +  ; \ Channel 2 Result
+    : CH3RES 0x16 +  ; \ Channel 3 Result
+    : CMP 0x18 +  ; \ Compare Value
+    : CH0 0x20 + CH_ ; \ ADC Channel 0
+    : CH1 0x28 + CH_ ; \ ADC Channel 1
+    : CH2 0x30 + CH_ ; \ ADC Channel 2
+    : CH3 0x38 + CH_ ; \ ADC Channel 3
+    \  ADC interrupt vectors
+    : CH0> 0 _vector_offset ;
+    : CH1> 2 _vector_offset ;
+    : CH2> 4 _vector_offset ;
+    : CH3> 6 _vector_offset ;
+    ;MODULE
+\ **************************************************************************
+\ * DAC - Digital/Analog Converter
+\ **************************************************************************/
+MODULE: DAC_
+    MODULE: CTRLA_
+        : IDOEN 4 _Bit ; \ Internal Output Enable bit position
+        : CH1EN 3 _Bit ; \ Channel 1 Output Enable bit position
+        : CH0EN 2 _Bit ; \ Channel 0 Output Enable bit position
+        : LPMODE 1 _Bit ; \ Low Power Mode bit position
+        : ENABLE 0 _Bit ; \ Enable bit position
+        ;MODULE         
+    MODULE: CTRLB_
+        : CHSEL0 5 _Bit ; \ Channel Select bit 0 position
+        : CHSEL1 6 _Bit ; \ Channel Select bit 1 position
+        : CH1TRIG 1 _Bit ; \ Channel 1 Event Trig Enable bit position
+        : CH0TRIG 0 _Bit ; \ Channel 0 Event Trig Enable bit position
+        ;MODULE         
+    MODULE: CTRLC_
+        : REFSEL0 3 _Bit ; \ Reference Select bit 0 position
+        : REFSEL1 4 _Bit ; \ Reference Select bit 1 position
+        : LEFTADJ 0 _Bit ; \ Left-adjust Result bit position
+        ;MODULE         
+    MODULE: EVCTRL_
+        : EVSPLIT 3 _Bit ; \ Separate Event Channel Input for Channel 1 bit position
+        : EVSEL0 0 _Bit ; \ Event Input Selection bit 0 position
+        : EVSEL1 1 _Bit ; \ Event Input Selection bit 1 position
+        : EVSEL2 2 _Bit ; \ Event Input Selection bit 2 position
+        ;MODULE         
+    MODULE: TIMCTRL_
+        : CONINTVAL0 4 _Bit ; \ Conversion Intercal bit 0 position
+        : CONINTVAL1 5 _Bit ; \ Conversion Intercal bit 1 position
+        : CONINTVAL2 6 _Bit ; \ Conversion Intercal bit 2 position
+        : REFRESH0 0 _Bit ; \ Refresh Timing Control bit 0 position
+        : REFRESH1 1 _Bit ; \ Refresh Timing Control bit 1 position
+        : REFRESH2 2 _Bit ; \ Refresh Timing Control bit 2 position
+        : REFRESH3 3 _Bit ; \ Refresh Timing Control bit 3 position
+        ;MODULE         
+    MODULE: STATUS_
+        : CH1DRE 1 _Bit ; \ Channel 1 Data Register Empty bit position
+        : CH0DRE 0 _Bit ; \ Channel 0 Data Register Empty bit position
+        ;MODULE         
+    MODULE: CH0GAINCAL_
+        : CH0GAINCAL0 0 _Bit ; \ Gain Calibration bit 0 position
+        : CH0GAINCAL1 1 _Bit ; \ Gain Calibration bit 1 position
+        : CH0GAINCAL2 2 _Bit ; \ Gain Calibration bit 2 position
+        : CH0GAINCAL3 3 _Bit ; \ Gain Calibration bit 3 position
+        : CH0GAINCAL4 4 _Bit ; \ Gain Calibration bit 4 position
+        : CH0GAINCAL5 5 _Bit ; \ Gain Calibration bit 5 position
+        : CH0GAINCAL6 6 _Bit ; \ Gain Calibration bit 6 position
+        ;MODULE         
+    MODULE: CH0OFFSETCAL_
+        : CH0OFFSETCAL0 0 _Bit ; \ Offset Calibration bit 0 position
+        : CH0OFFSETCAL1 1 _Bit ; \ Offset Calibration bit 1 position
+        : CH0OFFSETCAL2 2 _Bit ; \ Offset Calibration bit 2 position
+        : CH0OFFSETCAL3 3 _Bit ; \ Offset Calibration bit 3 position
+        : CH0OFFSETCAL4 4 _Bit ; \ Offset Calibration bit 4 position
+        : CH0OFFSETCAL5 5 _Bit ; \ Offset Calibration bit 5 position
+        : CH0OFFSETCAL6 6 _Bit ; \ Offset Calibration bit 6 position
+        ;MODULE         
+    MODULE: CH1GAINCAL_
+        : CH1GAINCAL0 0 _Bit ; \ Gain Calibration bit 0 position
+        : CH1GAINCAL1 1 _Bit ; \ Gain Calibration bit 1 position
+        : CH1GAINCAL2 2 _Bit ; \ Gain Calibration bit 2 position
+        : CH1GAINCAL3 3 _Bit ; \ Gain Calibration bit 3 position
+        : CH1GAINCAL4 4 _Bit ; \ Gain Calibration bit 4 position
+        : CH1GAINCAL5 5 _Bit ; \ Gain Calibration bit 5 position
+        : CH1GAINCAL6 6 _Bit ; \ Gain Calibration bit 6 position
+        ;MODULE         
+    MODULE: CH1OFFSETCAL_
+        : CH1OFFSETCAL0 0 _Bit ; \ Offset Calibration bit 0 position
+        : CH1OFFSETCAL1 1 _Bit ; \ Offset Calibration bit 1 position
+        : CH1OFFSETCAL2 2 _Bit ; \ Offset Calibration bit 2 position
+        : CH1OFFSETCAL3 3 _Bit ; \ Offset Calibration bit 3 position
+        : CH1OFFSETCAL4 4 _Bit ; \ Offset Calibration bit 4 position
+        : CH1OFFSETCAL5 5 _Bit ; \ Offset Calibration bit 5 position
+        : CH1OFFSETCAL6 6 _Bit ; \ Offset Calibration bit 6 position
+        ;MODULE         
+
+    : CTRLA 0x00 + CTRLA_ ; \ Control Register A
+    : CTRLB 0x01 + CTRLB_ ; \ Control Register B
+    : CTRLC 0x02 + CTRLC_ ; \ Control Register C
+    : EVCTRL 0x03 + EVCTRL_ ; \ Event Input Control
+    : TIMCTRL 0x04 + TIMCTRL_ ; \ Timing Control
+    : STATUS 0x05 + STATUS_ ; \ Status
+    : CH0GAINCAL 0x08 + CH0GAINCAL_ ; \ Gain Calibration
+    : CH0OFFSETCAL 0x09 + CH0OFFSETCAL_ ; \ Offset Calibration
+    : CH1GAINCAL 0x0A + CH1GAINCAL_ ; \ Gain Calibration
+    : CH1OFFSETCAL 0x0B + CH1OFFSETCAL_ ; \ Offset Calibration
+    : CH0DATA 0x18 +  ; \ Channel 0 Data
+    : CH1DATA 0x1A +  ; \ Channel 1 Data
+    \  AC interrupt vectors
+    : AC0> 0 _vector_offset ;
+    : AC1> 2 _vector_offset ;
+    : ACW> 4 _vector_offset ;
+    ;MODULE
+\ **************************************************************************
+\ * AC - Analog Comparator
+\ **************************************************************************/
+MODULE: AC_
+    MODULE: CTRL_
+        : INTMODE0 6 _Bit ; \ Interrupt Mode bit 0 position
+        : INTMODE1 7 _Bit ; \ Interrupt Mode bit 1 position
+        : INTLVL0 4 _Bit ; \ Interrupt Level bit 0 position
+        : INTLVL1 5 _Bit ; \ Interrupt Level bit 1 position
+        : HSMODE 3 _Bit ; \ High-speed Mode bit position
+        : HYSMODE0 1 _Bit ; \ Hysteresis Mode bit 0 position
+        : HYSMODE1 2 _Bit ; \ Hysteresis Mode bit 1 position
+        : ENABLE 0 _Bit ; \ Enable bit position
+        ;MODULE         
+    MODULE: MUXCTRL_
+        : MUXPOS0 3 _Bit ; \ MUX Positive Input bit 0 position
+        : MUXPOS1 4 _Bit ; \ MUX Positive Input bit 1 position
+        : MUXPOS2 5 _Bit ; \ MUX Positive Input bit 2 position
+        : MUXNEG0 0 _Bit ; \ MUX Negative Input bit 0 position
+        : MUXNEG1 1 _Bit ; \ MUX Negative Input bit 1 position
+        : MUXNEG2 2 _Bit ; \ MUX Negative Input bit 2 position
+        ;MODULE         
+
+    MODULE: CTRLA_
+        : AC1OUT 1 _Bit ; \ Analog Comparator 1 Output Enable bit position
+        : AC0OUT 0 _Bit ; \ Analog Comparator 0 Output Enable bit position
+        ;MODULE         
+    MODULE: CTRLB_
+        : SCALEFAC0 0 _Bit ; \ VCC Voltage Scaler Factor bit 0 position
+        : SCALEFAC1 1 _Bit ; \ VCC Voltage Scaler Factor bit 1 position
+        : SCALEFAC2 2 _Bit ; \ VCC Voltage Scaler Factor bit 2 position
+        : SCALEFAC3 3 _Bit ; \ VCC Voltage Scaler Factor bit 3 position
+        : SCALEFAC4 4 _Bit ; \ VCC Voltage Scaler Factor bit 4 position
+        : SCALEFAC5 5 _Bit ; \ VCC Voltage Scaler Factor bit 5 position
+        ;MODULE         
+    MODULE: WINCTRL_
+        : WEN 4 _Bit ; \ Window Mode Enable bit position
+        : WINTMODE0 2 _Bit ; \ Window Interrupt Mode bit 0 position
+        : WINTMODE1 3 _Bit ; \ Window Interrupt Mode bit 1 position
+        : WINTLVL0 0 _Bit ; \ Window Interrupt Level bit 0 position
+        : WINTLVL1 1 _Bit ; \ Window Interrupt Level bit 1 position
+        ;MODULE         
+    MODULE: STATUS_
+        : WSTATE0 6 _Bit ; \ Window Mode State bit 0 position
+        : WSTATE1 7 _Bit ; \ Window Mode State bit 1 position
+        : AC1STATE 5 _Bit ; \ Analog Comparator 1 State bit position
+        : AC0STATE 4 _Bit ; \ Analog Comparator 0 State bit position
+        : WIF 2 _Bit ; \ Window Mode Interrupt Flag bit position
+        : AC1IF 1 _Bit ; \ Analog Comparator 1 Interrupt Flag bit position
+        : AC0IF 0 _Bit ; \ Analog Comparator 0 Interrupt Flag bit position
+        ;MODULE         
+
+    : AC0CTRL 0x00 + CTRL_ ; \ Analog Comparator 0 Control
+    : AC1CTRL 0x01 + CTRL_ ; \ Analog Comparator 1 Control
+    : AC0MUXCTRL 0x02 + MUXCTRL_ ; \ Analog Comparator 0 MUX Control
+    : AC1MUXCTRL 0x03 + MUXCTRL_ ; \ Analog Comparator 1 MUX Control
+    : CTRLA 0x04 + CTRLA_ ; \ Control Register A
+    : CTRLB 0x05 + CTRLB_ ; \ Control Register B
+    : WINCTRL 0x06 + WINCTRL_ ; \ Window Mode Control
+    : STATUS 0x07 + STATUS_ ; \ Status
+    ;MODULE
+\ **************************************************************************
+\ * RTC - Real-Time Counter
+\ **************************************************************************/
+MODULE: RTC_
+    MODULE: CTRL_
+        : PRESCALER0 0 _Bit ; \ RTC prescaler bit position
+        : PRESCALER1 1 _Bit ; \ RTC prescaler bit position
+        : PRESCALER2 2 _Bit ; \ RTC prescaler bit position
+        ;MODULE         
+    MODULE: STATUS_
+        : SYNCBUSY 0 _Bit ; \ Synchronization Busy Flag bit position
+        ;MODULE         
+    MODULE: INTCTRL_
+        : COMPINTLVL0 2 _Bit ; \ Compare Match Interrupt Level bit 0 position
+        : COMPINTLVL1 3 _Bit ; \ Compare Match Interrupt Level bit 1 position
+        : OVFINTLVL0 0 _Bit ; \ Overflow Interrupt Level bit 0 position
+        : OVFINTLVL1 1 _Bit ; \ Overflow Interrupt Level bit 1 position
+        ;MODULE         
+    MODULE: INTFLAGS_
+        : COMPIF 1 _Bit ; \ Compare Match Interrupt Flag bit position
+        : OVFIF 0 _Bit ; \ Overflow Interrupt Flag bit position
+        ;MODULE         
+    : CTRL 0x00 + CTRL_ ; \ Control Register
+    : STATUS 0x01 + STATUS_ ; \ Status Register
+    : INTCTRL 0x02 + INTCTRL_ ; \ Interrupt Control Register
+    : INTFLAGS 0x03 + INTFLAGS_ ; \ Interrupt Flags
+    : TEMP 0x04 +  ; \ Temporary register
+    : CNT 0x08 +  ; \ Count Register
+    : PER 0x0A +  ; \ Period Register
+    : COMP 0x0C +  ; \ Compare Register
+    \  RTC interrupt vectors
+    : OVF> 0 _vector_offset ;
+    : COMP> 2 _vector_offset ;
+    ;MODULE
+\ **************************************************************************
+\ * RTC32 - 32-bit Real-Time Counter
+\ **************************************************************************/
+MODULE: RTC32_
+    MODULE: CTRL_
+        : ENABLE 0 _Bit ; \ RTC enable bit position
+        ;MODULE         
+    MODULE: SYNCCTRL_
+        : SYNCCNT 4 _Bit ; \ Synchronization Busy Flag bit position
+        : SYNCBUSY 0 _Bit ; \ Synchronization Busy Flag bit position
+        ;MODULE         
+    MODULE: INTCTRL_
+        : COMPINTLVL0 2 _Bit ; \ Compare Match Interrupt Level bit 0 position
+        : COMPINTLVL1 3 _Bit ; \ Compare Match Interrupt Level bit 1 position
+        : OVFINTLVL0 0 _Bit ; \ Overflow Interrupt Level bit 0 position
+        : OVFINTLVL1 1 _Bit ; \ Overflow Interrupt Level bit 1 position
+        ;MODULE         
+    MODULE: INTFLAGS_
+        : COMPIF 1 _Bit ; \ Compare Match Interrupt Flag bit position
+        : OVFIF 0 _Bit ; \ Overflow Interrupt Flag bit position
+        ;MODULE         
+    : CTRL 0x00 + CTRL_ ; \ Control Register
+    : SYNCCTRL 0x01 + SYNCCTRL_ ; \ Synchronization Control/Status Register
+    : INTCTRL 0x02 + INTCTRL_ ; \ Interrupt Control Register
+    : INTFLAGS 0x03 + INTFLAGS_ ; \ Interrupt Flags
+    : CNT 0x04 +  ; \ Count Register
+    : PER 0x08 +  ; \ Period Register
+    : COMP 0x0C +  ; \ Compare Register
+    \  RTC32 interrupt vectors
+    : OVF> 0 _vector_offset ;
+    : COMP> 2 _vector_offset ;
+    ;MODULE
+\ **************************************************************************
+\ * TWI - Two-Wire Interface
+\ **************************************************************************/
+MODULE: TWI_
+    MODULE: MASTER_
+        MODULE: CTRLA_
+            : INTLVL0 6 _Bit ; \ Interrupt Level bit 0 position
+            : INTLVL1 7 _Bit ; \ Interrupt Level bit 1 position
+            : RIEN 5 _Bit ; \ Read Interrupt Enable bit position
+            : WIEN 4 _Bit ; \ Write Interrupt Enable bit position
+            : ENABLE 3 _Bit ; \ Enable TWI Master bit position
+            ;MODULE         
+        MODULE: CTRLB_
+            : TIMEOUT0 2 _Bit ; \ Inactive Bus Timeout bit 0 position
+            : TIMEOUT1 3 _Bit ; \ Inactive Bus Timeout bit 1 position
+            : QCEN 1 _Bit ; \ Quick Command Enable bit position
+            : SMEN 0 _Bit ; \ Smart Mode Enable bit position
+            ;MODULE         
+        MODULE: CTRLC_
+            : ACKACT 2 _Bit ; \ Acknowledge Action bit position
+            : CMD0 0 _Bit ; \ Command bit 0 position
+            : CMD1 1 _Bit ; \ Command bit 1 position
+            ;MODULE         
+        MODULE: STATUS_
+            : RIF 7 _Bit ; \ Read Interrupt Flag bit position
+            : WIF 6 _Bit ; \ Write Interrupt Flag bit position
+            : CLKHOLD 5 _Bit ; \ Clock Hold bit position
+            : RXACK 4 _Bit ; \ Received Acknowledge bit position
+            : ARBLOST 3 _Bit ; \ Arbitration Lost bit position
+            : BUSERR 2 _Bit ; \ Bus Error bit position
+            : BUSSTATE0 0 _Bit ; \ Bus State bit 0 position
+            : BUSSTATE1 1 _Bit ; \ Bus State bit 1 position
+            ;MODULE         
+        : CTRLA 0x00 + CTRLA_ ; \ Control Register A
+        : CTRLB 0x01 + CTRLB_ ; \ Control Register B
+        : CTRLC 0x02 + CTRLC_ ; \ Control Register C
+        : STATUS 0x03 + STATUS_ ; \ Status Register
+        : BAUD 0x04 +  ; \ Baurd Rate Control Register
+        : ADDR 0x05 +  ; \ Address Register
+        : DATA 0x06 +  ; \ Data Register
+        ;MODULE         
+    MODULE: SLAVE_
+        MODULE: CTRLA_
+            : INTLVL0 6 _Bit ; \ Interrupt Level bit 0 position
+            : INTLVL1 7 _Bit ; \ Interrupt Level bit 1 position
+            : DIEN 5 _Bit ; \ Data Interrupt Enable bit position
+            : APIEN 4 _Bit ; \ Address/Stop Interrupt Enable bit position
+            : ENABLE 3 _Bit ; \ Enable TWI Slave bit position
+            : PIEN 2 _Bit ; \ Stop Interrupt Enable bit position
+            : PMEN 1 _Bit ; \ Promiscuous Mode Enable bit position
+            : SMEN 0 _Bit ; \ Smart Mode Enable bit position
+            ;MODULE         
+        MODULE: CTRLB_
+            : ACKACT 2 _Bit ; \ Acknowledge Action bit position
+            : CMD0 0 _Bit ; \ Command bit 0 position
+            : CMD1 1 _Bit ; \ Command bit 1 position
+            ;MODULE         
+        MODULE: STATUS_
+            : DIF 7 _Bit ; \ Data Interrupt Flag bit position
+            : APIF 6 _Bit ; \ Address/Stop Interrupt Flag bit position
+            : CLKHOLD 5 _Bit ; \ Clock Hold bit position
+            : RXACK 4 _Bit ; \ Received Acknowledge bit position
+            : COLL 3 _Bit ; \ Collision bit position
+            : BUSERR 2 _Bit ; \ Bus Error bit position
+            : DIR 1 _Bit ; \ Read/Write Direction bit position
+            : AP 0 _Bit ; \ Slave Address or Stop bit position
+            ;MODULE         
+        MODULE: ADDRMASK_
+            : ADDRMASK0 1 _Bit ; \ Address Mask bit 0 position
+            : ADDRMASK1 2 _Bit ; \ Address Mask bit 1 position
+            : ADDRMASK2 3 _Bit ; \ Address Mask bit 2 position
+            : ADDRMASK3 4 _Bit ; \ Address Mask bit 3 position
+            : ADDRMASK4 5 _Bit ; \ Address Mask bit 4 position
+            : ADDRMASK5 6 _Bit ; \ Address Mask bit 5 position
+            : ADDRMASK6 7 _Bit ; \ Address Mask bit 6 position
+            : ADDREN 0 _Bit ; \ Address Enable bit position
+            ;MODULE         
+        : CTRLA 0x00 + CTRLA_ ; \ Control Register A
+        : CTRLB 0x01 + CTRLB_ ; \ Control Register B
+        : STATUS 0x02 + STATUS_ ; \ Status Register
+        : ADDR 0x03 +  ; \ Address Register
+        : DATA 0x04 +  ; \ Data Register
+        : ADDRMASK 0x05 + ADDRMASK_ ; \ Address Mask Register
+        ;MODULE
+    MODULE: CTRL_
+        : SDAHOLD0 1 _Bit ; \ SDA Hold Time Enable bit 0 position
+        : SDAHOLD1 2 _Bit ; \ SDA Hold Time Enable bit 1 position
+        : EDIEN 0 _Bit ; \ External Driver Interface Enable bit position
+        ;MODULE
+    : CTRL 0x00 + CTRL_ ; \ TWI Common Control Register
+    : MASTER 0x0001 + MASTER_ ; \ TWI master module
+    : SLAVE 0x0008 + SLAVE_ ; \ TWI slave module
+    \  TWI interrupt vectors
+    : TWIS> 0 _vector_offset ;
+    : TWIM> 2 _vector_offset ;
+    ;MODULE
+\ **************************************************************************
+\ * USB - USB
+\ **************************************************************************/
+MODULE: USB_
+    MODULE: EP_
+        MODULE: STATUS_
+            : STALLF 7 _Bit ; \ Endpoint Stall Flag bit position
+            : CRC 7 _Bit ; \ CRC Error Flag bit position
+            : UNF 6 _Bit ; \ Underflow Enpoint FLag bit position
+            : OVF 6 _Bit ; \ Overflow Enpoint Flag for Output Endpoints bit position
+            : TRNCOMPL0 5 _Bit ; \ Transaction Complete 0 Flag bit position
+            : TRNCOMPL1 4 _Bit ; \ Transaction Complete 1 Flag bit position
+            : SETUP 4 _Bit ; \ SETUP Transaction Complete Flag bit position
+            : BANK 3 _Bit ; \ Bank Select bit position
+            : BUSNACK1 2 _Bit ; \ Data Buffer 1 Not Acknowledge bit position
+            : BUSNACK0 1 _Bit ; \ Data Buffer 0 Not Acknowledge bit position
+            : TOGGLE 0 _Bit ; \ Data Toggle bit position
+            ;MODULE
+        MODULE: CTRL_
+            : TYPE0 6 _Bit ; \ Endpoint Type bit 0 position
+            : TYPE1 7 _Bit ; \ Endpoint Type bit 1 position
+            : MULTIPKT 5 _Bit ; \ Multi Packet Transfer Enable bit position
+            : PINGPONG 4 _Bit ; \ Ping-Pong Enable bit position
+            : INTDSBL 3 _Bit ; \ Interrupt Disable bit position
+            : STALL 2 _Bit ; \ Data Stall bit position
+            : BUFSIZE0 0 _Bit ; \ Data Buffer Size bit 0 position
+            : BUFSIZE1 1 _Bit ; \ Data Buffer Size bit 1 position
+            : BUFSIZE2 2 _Bit ; \ Data Buffer Size bit 2 position
+            ;MODULE
+        MODULE: CNTH_
+            : ZLP 7 _Bit ; \ Zero Length Packet bit position
+            ;MODULE
+        : STATUS 0x00 + STATUS_ ; \ Endpoint Status
+        : CTRL 0x01 + CTRL_ ; \ Endpoint Control
+        : CNT 0x02 + ; \ USB Endpoint Counter
+        : CNTH 0x03 + CNTH_ ; \ USB Endpoint Counter
+        : DATAPTR 0x04 +  ; \ Data Pointer
+        : AUXDATA 0x06 +  ; \ Auxiliary Data        
+        ;MODULE
+    MODULE: CTRLA_
+        : ENABLE 7 _Bit ; \ USB Enable bit position
+        : SPEED 6 _Bit ; \ Speed Select bit position
+        : FIFOEN 5 _Bit ; \ USB FIFO Enable bit position
+        : STFRNUM 4 _Bit ; \ Store Frame Number Enable bit position
+        : MAXEP0 0 _Bit ; \ Maximum Endpoint Addresses bit 0 position
+        : MAXEP1 1 _Bit ; \ Maximum Endpoint Addresses bit 1 position
+        : MAXEP2 2 _Bit ; \ Maximum Endpoint Addresses bit 2 position
+        : MAXEP3 3 _Bit ; \ Maximum Endpoint Addresses bit 3 position
+        ;MODULE
+    MODULE: CTRLB_
+        : PULLRST 4 _Bit ; \ Pull during Reset bit position
+        : RWAKEUP 2 _Bit ; \ Remote Wake-up bit position
+        : GNACK 1 _Bit ; \ Global NACK bit position
+        : ATTACH 0 _Bit ; \ Attach bit position
+        ;MODULE
+    MODULE: STATUS_
+        : URESUME 3 _Bit ; \ Upstream Resume bit position
+        : RESUME 2 _Bit ; \ Resume bit position
+        : SUSPEND 1 _Bit ; \ Bus Suspended bit position
+        : BUSRST 0 _Bit ; \ Bus Reset bit position
+        ;MODULE
+    MODULE: ADDR_
+        : ADDR0 0 _Bit ; \ Device Address bit 0 position
+        : ADDR1 1 _Bit ; \ Device Address bit 1 position
+        : ADDR2 2 _Bit ; \ Device Address bit 2 position
+        : ADDR3 3 _Bit ; \ Device Address bit 3 position
+        : ADDR4 4 _Bit ; \ Device Address bit 4 position
+        : ADDR5 5 _Bit ; \ Device Address bit 5 position
+        : ADDR6 6 _Bit ; \ Device Address bit 6 position
+        ;MODULE
+    MODULE: FIFOWP_
+        : FIFOWP0 0 _Bit ; \ FIFO Write Pointer bit 0 position
+        : FIFOWP1 1 _Bit ; \ FIFO Write Pointer bit 1 position
+        : FIFOWP2 2 _Bit ; \ FIFO Write Pointer bit 2 position
+        : FIFOWP3 3 _Bit ; \ FIFO Write Pointer bit 3 position
+        : FIFOWP4 4 _Bit ; \ FIFO Write Pointer bit 4 position
+        ;MODULE
+    MODULE: FIFORP_
+        : FIFORP0 0 _Bit ; \ FIFO Read Pointer bit 0 position
+        : FIFORP1 1 _Bit ; \ FIFO Read Pointer bit 1 position
+        : FIFORP2 2 _Bit ; \ FIFO Read Pointer bit 2 position
+        : FIFORP3 3 _Bit ; \ FIFO Read Pointer bit 3 position
+        : FIFORP4 4 _Bit ; \ FIFO Read Pointer bit 4 position
+        ;MODULE
+    MODULE: INTCTRLA_
+        : SOFIE 7 _Bit ; \ Start Of Frame Interrupt Enable bit position
+        : BUSEVIE 6 _Bit ; \ Bus Event Interrupt Enable bit position
+        : BUSERRIE 5 _Bit ; \ Bus Error Interrupt Enable bit position
+        : STALLIE 4 _Bit ; \ STALL Interrupt Enable bit position
+        : INTLVL0 0 _Bit ; \ Interrupt Level bit 0 position
+        : INTLVL1 1 _Bit ; \ Interrupt Level bit 1 position
+        ;MODULE
+    MODULE: INTCTRLB_
+        : TRNIE 1 _Bit ; \ Transaction Complete Interrupt Enable bit position
+        : SETUPIE 0 _Bit ; \ SETUP Transaction Complete Interrupt Enable bit position
+        ;MODULE
+    MODULE: INTFLAGSA_
+        : SOFIF 7 _Bit ; \ Start Of Frame Interrupt Flag bit position
+        : SUSPENDIF 6 _Bit ; \ Suspend Interrupt Flag bit position
+        : RESUMEIF 5 _Bit ; \ Resume Interrupt Flag bit position
+        : RSTIF 4 _Bit ; \ Reset Interrupt Flag bit position
+        : CRCIF 3 _Bit ; \ Isochronous CRC Error Interrupt Flag bit position
+        : UNFIF 2 _Bit ; \ Underflow Interrupt Flag bit position
+        : OVFIF 1 _Bit ; \ Overflow Interrupt Flag bit position
+        : STALLIF 0 _Bit ; \ STALL Interrupt Flag bit position
+        ;MODULE
+    MODULE: INTFLAGSB_
+        : TRNIF 1 _Bit ; \ Transaction Complete Interrupt Flag bit position
+        : SETUPIF 0 _Bit ; \ SETUP Transaction Complete Interrupt Flag bit position
+        ;MODULE
+        : EP0OUT DROP 0x00  EP_ ; \ Endpoint 0
+        : EP0IN  DROP 0x08  EP_ ; \ Endpoint 0
+        : EP1OUT DROP 0x10  EP_ ; \ Endpoint 1
+        : EP1IN  DROP 0x18  EP_ ; \ Endpoint 1
+        : EP2OUT DROP 0x20  EP_ ; \ Endpoint 2
+        : EP2IN  DROP 0x28  EP_ ; \ Endpoint 2
+        : EP3OUT DROP 0x30  EP_ ; \ Endpoint 3
+        : EP3IN  DROP 0x38  EP_ ; \ Endpoint 3
+        : EP4OUT DROP 0x40  EP_ ; \ Endpoint 4
+        : EP4IN  DROP 0x48  EP_ ; \ Endpoint 4
+        : EP5OUT DROP 0x50  EP_ ; \ Endpoint 5
+        : EP5IN  DROP 0x58  EP_ ; \ Endpoint 5
+        : EP6OUT DROP 0x60  EP_ ; \ Endpoint 6
+        : EP6IN  DROP 0x68  EP_ ; \ Endpoint 6
+        : EP7OUT DROP 0x70  EP_ ; \ Endpoint 7
+        : EP7IN  DROP 0x78  EP_ ; \ Endpoint 7
+        : EP8OUT DROP 0x80  EP_ ; \ Endpoint 8
+        : EP8IN  DROP 0x88  EP_ ; \ Endpoint 8
+        : EP9OUT DROP 0x90  EP_ ; \ Endpoint 9
+        : EP9IN  DROP 0x98  EP_ ; \ Endpoint 9
+        : EP10OUT DROP 0xA0  EP_ ; \ Endpoint 10
+        : EP10IN DROP 0xA8  EP_ ; \ Endpoint 10
+        : EP11OUT DROP 0xB0  EP_ ; \ Endpoint 11
+        : EP11IN DROP 0xB8  EP_ ; \ Endpoint 11
+        : EP12OUT DROP 0xC0  EP_ ; \ Endpoint 12
+        : EP12IN DROP 0xC8  EP_ ; \ Endpoint 12
+        : EP13OUT DROP 0xD0  EP_ ; \ Endpoint 13
+        : EP13IN DROP 0xD8  EP_ ; \ Endpoint 13
+        : EP14OUT DROP 0xE0  EP_ ; \ Endpoint 14
+        : EP14IN DROP 0xE8  EP_ ; \ Endpoint 14
+        : EP15OUT DROP 0xF0  EP_ ; \ Endpoint 15
+        : EP15IN DROP 0xF8  EP_ ; \ Endpoint 15
+        MODULE: FRAMENUMH_
+            : FRAMEERR 7 _Bit ; \ Frame Error bit position
+            ;MODULE
+        : FRAMENUML DROP 0x110   ; \ Frame Number Low Byte
+        : FRAMENUMH DROP 0x111 FRAMENUMH_ ; \ Frame Number High Byte       
+
+    : CTRLA 0x00 + CTRLA_ ; \ Control Register A
+    : CTRLB 0x01 + CTRLB_ ; \ Control Register B
+    : STATUS 0x02 + STATUS_ ; \ Status Register
+    : ADDR 0x03 + ADDR_ ; \ Address Register
+    : FIFOWP 0x04 + FIFOWP_ ; \ FIFO Write Pointer Register
+    : FIFORP 0x05 + FIFORP_ ; \ FIFO Read Pointer Register
+    : EPPTR 0x06 +   ; \ Endpoint Configuration Table Pointer
+    : INTCTRLA 0x08 + INTCTRLA_ ; \ Interrupt Control Register A
+    : INTCTRLB 0x09 + INTCTRLB_ ; \ Interrupt Control Register B
+    : INTFLAGSACLR 0x0A + INTFLAGSA_ ; \ Clear Interrupt Flag Register A
+    : INTFLAGSASET 0x0B + INTFLAGSA_ ; \ Set Interrupt Flag Register A
+    : INTFLAGSBCLR 0x0C + INTFLAGSB_ ; \ Clear Interrupt Flag Register B
+    : INTFLAGSBSET 0x0D + INTFLAGSB_ ; \ Set Interrupt Flag Register B
+    : CAL0 0x3A + ; \ Calibration Byte 0
+    : CAL1 0x3B + ; \ Calibration Byte 1
+    \  USB interrupt vectors
+    : BUSEVENT> 0 _vector_offset ;
+    : TRNCOMPL> 2 _vector_offset ;
+    ;MODULE
+\ **************************************************************************
+\ * PORT - I/O Port Configuration
+\ **************************************************************************/
+MODULE: PORT_
+    MODULE: INTCTRL_
+        : INT1LVL0 2 _Bit ; \ Port Interrupt 1 Level bit 0 position
+        : INT1LVL1 3 _Bit ; \ Port Interrupt 1 Level bit 1 position
+        : INT0LVL0 0 _Bit ; \ Port Interrupt 0 Level bit 0 position
+        : INT0LVL1 1 _Bit ; \ Port Interrupt 0 Level bit 1 position
+        ;MODULE
+    MODULE: INTFLAGS_
+        : INT1IF 1 _Bit ; \ Port Interrupt 1 Flag bit position
+        : INT0IF 0 _Bit ; \ Port Interrupt 0 Flag bit position
+        ;MODULE
+    MODULE: REMAP_
+        : SPI 5 _Bit ; \ SPI bit position
+        : USART0 4 _Bit ; \ USART0 bit position
+        : TC0D 3 _Bit ; \ Timer/Counter 0 Output Compare D bit position
+        : TC0C 2 _Bit ; \ Timer/Counter 0 Output Compare C bit position
+        : TC0B 1 _Bit ; \ Timer/Counter 0 Output Compare B bit position
+        : TC0A 0 _Bit ; \ Timer/Counter 0 Output Compare A bit position
+        ;MODULE
+    MODULE: PINCTRL_
+        : SRLEN 7 _Bit ; \ Slew Rate Enable bit position
+        : INVEN 6 _Bit ; \ Inverted I/O Enable bit position
+        : OPC0 3 _Bit ; \ Output/Pull Configuration bit 0 position
+        : OPC1 4 _Bit ; \ Output/Pull Configuration bit 1 position
+        : OPC2 5 _Bit ; \ Output/Pull Configuration bit 2 position
+        : ISC0 0 _Bit ; \ Input/Sense Configuration bit 0 position
+        : ISC1 1 _Bit ; \ Input/Sense Configuration bit 1 position
+        : ISC2 2 _Bit ; \ Input/Sense Configuration bit 2 position
+        ;MODULE
+
+    : DIR 0x00 +  ; \ I/O Port Data Direction
+    : DIRSET 0x01 +  ; \ I/O Port Data Direction Set
+    : DIRCLR 0x02 +  ; \ I/O Port Data Direction Clear
+    : DIRTGL 0x03 +  ; \ I/O Port Data Direction Toggle
+    : OUT 0x04 +  ; \ I/O Port Output
+    : OUTSET 0x05 +  ; \ I/O Port Output Set
+    : OUTCLR 0x06 +  ; \ I/O Port Output Clear
+    : OUTTGL 0x07 +  ; \ I/O Port Output Toggle
+    : IN 0x08 +  ; \ I/O port Input
+    : INTCTRL 0x09 + INTCTRL_ ; \ Interrupt Control Register
+    : INT0MASK 0x0A +  ; \ Port Interrupt 0 Mask
+    : INT1MASK 0x0B +  ; \ Port Interrupt 1 Mask
+    : INTFLAGS 0x0C + INTFLAGS_ ; \ Interrupt Flag Register
+    : REMAP 0x0E + REMAP_ ; \ I/O Port Pin Remap Register
+    : PIN0CTRL 0x10 + PINCTRL_ ; \ Pin 0 Control Register
+    : PIN1CTRL 0x11 + PINCTRL_ ; \ Pin 1 Control Register
+    : PIN2CTRL 0x12 + PINCTRL_ ; \ Pin 2 Control Register
+    : PIN3CTRL 0x13 + PINCTRL_ ; \ Pin 3 Control Register
+    : PIN4CTRL 0x14 + PINCTRL_ ; \ Pin 4 Control Register
+    : PIN5CTRL 0x15 + PINCTRL_ ; \ Pin 5 Control Register
+    : PIN6CTRL 0x16 + PINCTRL_ ; \ Pin 6 Control Register
+    : PIN7CTRL 0x17 + PINCTRL_ ; \ Pin 7 Control Register
+    \  PORT interrupt vectors
+    : INT0> 0 _vector_offset ;
+    : INT1> 2 _vector_offset ;
+    ;MODULE
+\ **************************************************************************
+\ * TC - 16-bit Timer/Counter With PWM
+\ **************************************************************************/
+MODULE: TC_
+    MODULE: CTRLA_
+        : CLKSEL0 0 _Bit ; \ Clock Selection bit 0 position
+        : CLKSEL1 1 _Bit ; \ Clock Selection bit 1 position
+        : CLKSEL2 2 _Bit ; \ Clock Selection bit 2 position
+        : CLKSEL3 3 _Bit ; \ Clock Selection bit 3 position
+        ;MODULE
+    MODULE: CTRLB_
+        : CCDEN 7 _Bit ; \ Compare or Capture D Enable bit position
+        : CCCEN 6 _Bit ; \ Compare or Capture C Enable bit position
+        : CCBEN 5 _Bit ; \ Compare or Capture B Enable bit position
+        : CCAEN 4 _Bit ; \ Compare or Capture A Enable bit position
+        : WGMODE0 0 _Bit ; \ Waveform generation mode bit 0 position
+        : WGMODE1 1 _Bit ; \ Waveform generation mode bit 1 position
+        : WGMODE2 2 _Bit ; \ Waveform generation mode bit 2 position
+        ;MODULE
+    MODULE: CTRLC_
+        : CMPD 3 _Bit ; \ Compare D Output Value bit position
+        : CMPC 2 _Bit ; \ Compare C Output Value bit position
+        : CMPB 1 _Bit ; \ Compare B Output Value bit position
+        : CMPA 0 _Bit ; \ Compare A Output Value bit position
+        ;MODULE
+    MODULE: CTRLD_
+        : EVACT0 5 _Bit ; \ Event Action bit 0 position
+        : EVACT1 6 _Bit ; \ Event Action bit 1 position
+        : EVACT2 7 _Bit ; \ Event Action bit 2 position
+        : EVDLY 4 _Bit ; \ Event Delay bit position
+        : EVSEL0 0 _Bit ; \ Event Source Select bit 0 position
+        : EVSEL1 1 _Bit ; \ Event Source Select bit 1 position
+        : EVSEL2 2 _Bit ; \ Event Source Select bit 2 position
+        : EVSEL3 3 _Bit ; \ Event Source Select bit 3 position
+        ;MODULE
+    MODULE: CTRLE_
+        : BYTEM0 0 _Bit ; \ Byte Mode bit 0 position
+        : BYTEM1 1 _Bit ; \ Byte Mode bit 1 position
+        ;MODULE
+    MODULE: INTCTRLA_
+        : ERRINTLVL0 2 _Bit ; \ Error Interrupt Level bit 0 position
+        : ERRINTLVL1 3 _Bit ; \ Error Interrupt Level bit 1 position
+        : OVFINTLVL0 0 _Bit ; \ Overflow interrupt level bit 0 position
+        : OVFINTLVL1 1 _Bit ; \ Overflow interrupt level bit 1 position
+        ;MODULE
+    MODULE: INTCTRLB_
+        : CCDINTLVL0 6 _Bit ; \ Compare or Capture D Interrupt Level bit 0 position
+        : CCDINTLVL1 7 _Bit ; \ Compare or Capture D Interrupt Level bit 1 position
+        : CCCINTLVL0 4 _Bit ; \ Compare or Capture C Interrupt Level bit 0 position
+        : CCCINTLVL1 5 _Bit ; \ Compare or Capture C Interrupt Level bit 1 position
+        : CCBINTLVL0 2 _Bit ; \ Compare or Capture B Interrupt Level bit 0 position
+        : CCBINTLVL1 3 _Bit ; \ Compare or Capture B Interrupt Level bit 1 position
+        : CCAINTLVL0 0 _Bit ; \ Compare or Capture A Interrupt Level bit 0 position
+        : CCAINTLVL1 1 _Bit ; \ Compare or Capture A Interrupt Level bit 1 position
+        ;MODULE
+    MODULE: CTRLF_
+        : CMD0 2 _Bit ; \ Command bit 0 position
+        : CMD1 3 _Bit ; \ Command bit 1 position
+        : LUPD 1 _Bit ; \ Lock Update bit position
+        : DIR 0 _Bit ; \ Direction bit position
+        ;MODULE
+    MODULE: CTRLG_
+        : CCDBV 4 _Bit ; \ Compare or Capture D Buffer Valid bit position
+        : CCCBV 3 _Bit ; \ Compare or Capture C Buffer Valid bit position
+        : CCBBV 2 _Bit ; \ Compare or Capture B Buffer Valid bit position
+        : CCABV 1 _Bit ; \ Compare or Capture A Buffer Valid bit position
+        : PERBV 0 _Bit ; \ Period Buffer Valid bit position
+        ;MODULE
+    MODULE: INTFLAGS_
+        : CCDIF 7 _Bit ; \ Compare or Capture D Interrupt Flag bit position
+        : CCCIF 6 _Bit ; \ Compare or Capture C Interrupt Flag bit position
+        : CCBIF 5 _Bit ; \ Compare or Capture B Interrupt Flag bit position
+        : CCAIF 4 _Bit ; \ Compare or Capture A Interrupt Flag bit position
+        : ERRIF 1 _Bit ; \ Error Interrupt Flag bit position
+        : OVFIF 0 _Bit ; \ Overflow Interrupt Flag bit position
+        ;MODULE
+    ;MODULE
+MODULE: TC0_
+    ALSO TC_
+    : CTRLA 0x00 +  CTRLA_ ; \ Control  Register A
+    : CTRLB 0x01 +  CTRLB_ ; \ Control Register B
+    : CTRLC 0x02 +  CTRLC_ ; \ Control register C
+    : CTRLD 0x03 +  CTRLD_ ; \ Control Register D
+    : CTRLE 0x04 +  CTRLE_ ; \ Control Register E
+    : INTCTRLA 0x06 +  INTCTRLA_ ; \ Interrupt Control Register A
+    : INTCTRLB 0x07 +  INTCTRLB_ ; \ Interrupt Control Register B
+    : CTRLFCLR 0x08 +  CTRLF_ ; \ Control Register F Clear
+    : CTRLFSET 0x09 +  CTRLF_ ; \ Control Register F Set
+    : CTRLGCLR 0x0A +  CTRLG_ ; \ Control Register G Clear
+    : CTRLGSET 0x0B +  CTRLG_ ; \ Control Register G Set
+    : INTFLAGS 0x0C +  INTFLAGS_ ; \ Interrupt Flag Register
+    PREVIOUS
+    : TEMP 0x0F +  ; \ Temporary Register For 16-bit Access
+    : CNT 0x20 +  ; \ Count
+    : PER 0x26 +  ; \ Period
+    : CCA 0x28 +  ; \ Compare or Capture A
+    : CCB 0x2A +  ; \ Compare or Capture B
+    : CCC 0x2C +  ; \ Compare or Capture C
+    : CCD 0x2E +  ; \ Compare or Capture D
+    : PERBUF 0x36 +  ; \ Period Buffer
+    : CCABUF 0x38 +  ; \ Compare Or Capture A Buffer
+    : CCBBUF 0x3A +  ; \ Compare Or Capture B Buffer
+    : CCCBUF 0x3C +  ; \ Compare Or Capture C Buffer
+    : CCDBUF 0x3E +  ; \ Compare Or Capture D Buffer
+    \  TC0 interrupt vectors
+    : OVF> 0 _vector_offset ;
+    : ERR> 2 _vector_offset ;
+    : CCA> 4 _vector_offset ;
+    : CCB> 6 _vector_offset ;
+    : CCC> 8 _vector_offset ;
+    : CCD> 10 _vector_offset ;
+    ;MODULE
+
+MODULE: TC1_
+    ALSO TC_
+    : CTRLA 0x00 +  CTRLA_ ; \ Control  Register A
+    : CTRLB 0x01 +  CTRLB_ ; \ Control Register B
+    : CTRLC 0x02 +  CTRLC_ ; \ Control register C
+    : CTRLD 0x03 +  CTRLD_ ; \ Control Register D
+    : CTRLE 0x04 +  CTRLE_ ; \ Control Register E
+    : INTCTRLA 0x06 +  INTCTRLA_ ; \ Interrupt Control Register A
+    : INTCTRLB 0x07 +  INTCTRLB_ ; \ Interrupt Control Register B
+    : CTRLFCLR 0x08 +  CTRLF_ ; \ Control Register F Clear
+    : CTRLFSET 0x09 +  CTRLF_ ; \ Control Register F Set
+    : CTRLGCLR 0x0A +  CTRLG_ ; \ Control Register G Clear
+    : CTRLGSET 0x0B +  CTRLG_ ; \ Control Register G Set
+    : INTFLAGS 0x0C +  INTFLAGS_ ; \ Interrupt Flag Register
+    PREVIOUS
+    : TEMP 0x0F +  ; \ Temporary Register For 16-bit Access
+    : CNT 0x20 +  ; \ Count
+    : PER 0x26 +  ; \ Period
+    : CCA 0x28 +  ; \ Compare or Capture A
+    : CCB 0x2A +  ; \ Compare or Capture B
+    : PERBUF 0x36 +  ; \ Period Buffer
+    : CCABUF 0x38 +  ; \ Compare Or Capture A Buffer
+    : CCBBUF 0x3A +  ; \ Compare Or Capture B Buffer
+    \  TC1 interrupt vectors
+    : OVF> 0 _vector_offset ;
+    : ERR> 2 _vector_offset ;
+    : CCA> 4 _vector_offset ;
+    : CCB> 6 _vector_offset ;
+    ;MODULE
+
+\ **************************************************************************
+\ * TC2 - 16-bit Timer/Counter type 2
+\ **************************************************************************/
+MODULE: TC2_
+    MODULE: CTRLA_
+        : CLKSEL0 0 _Bit ; \ Clock Selection bit 0 position
+        : CLKSEL1 1 _Bit ; \ Clock Selection bit 1 position
+        : CLKSEL2 2 _Bit ; \ Clock Selection bit 2 position
+        : CLKSEL3 3 _Bit ; \ Clock Selection bit 3 position
+        ;MODULE
+    MODULE: CTRLB_
+        : HCMPDEN 7 _Bit ; \ High Byte Compare D Enable bit position
+        : HCMPCEN 6 _Bit ; \ High Byte Compare C Enable bit position
+        : HCMPBEN 5 _Bit ; \ High Byte Compare B Enable bit position
+        : HCMPAEN 4 _Bit ; \ High Byte Compare A Enable bit position
+        : LCMPDEN 3 _Bit ; \ Low Byte Compare D Enable bit position
+        : LCMPCEN 2 _Bit ; \ Low Byte Compare C Enable bit position
+        : LCMPBEN 1 _Bit ; \ Low Byte Compare B Enable bit position
+        : LCMPAEN 0 _Bit ; \ Low Byte Compare A Enable bit position
+        ;MODULE
+    MODULE: CTRLC_
+        : HCMPD 7 _Bit ; \ High Byte Compare D Output Value bit position
+        : HCMPC 6 _Bit ; \ High Byte Compare C Output Value bit position
+        : HCMPB 5 _Bit ; \ High Byte Compare B Output Value bit position
+        : HCMPA 4 _Bit ; \ High Byte Compare A Output Value bit position
+        : LCMPD 3 _Bit ; \ Low Byte Compare D Output Value bit position
+        : LCMPC 2 _Bit ; \ Low Byte Compare C Output Value bit position
+        : LCMPB 1 _Bit ; \ Low Byte Compare B Output Value bit position
+        : LCMPA 0 _Bit ; \ Low Byte Compare A Output Value bit position
+        ;MODULE
+    MODULE: CTRLE_
+        : BYTEM0 0 _Bit ; \ Byte Mode bit 0 position
+        : BYTEM1 1 _Bit ; \ Byte Mode bit 1 position
+        ;MODULE
+    MODULE: INTCTRLA_
+        : HUNFINTLVL0 2 _Bit ; \ High Byte Underflow Interrupt Level bit 0 position
+        : HUNFINTLVL1 3 _Bit ; \ High Byte Underflow Interrupt Level bit 1 position
+        : LUNFINTLVL0 0 _Bit ; \ Low Byte Underflow interrupt level bit 0 position
+        : LUNFINTLVL1 1 _Bit ; \ Low Byte Underflow interrupt level bit 1 position
+        ;MODULE
+    MODULE: INTCTRLB_
+        : LCMPDINTLVL0 6 _Bit ; \ Low Byte Compare D Interrupt Level bit 0 position
+        : LCMPDINTLVL1 7 _Bit ; \ Low Byte Compare D Interrupt Level bit 1 position
+        : LCMPCINTLVL0 4 _Bit ; \ Low Byte Compare C Interrupt Level bit 0 position
+        : LCMPCINTLVL1 5 _Bit ; \ Low Byte Compare C Interrupt Level bit 1 position
+        : LCMPBINTLVL0 2 _Bit ; \ Low Byte Compare B Interrupt Level bit 0 position
+        : LCMPBINTLVL1 3 _Bit ; \ Low Byte Compare B Interrupt Level bit 1 position
+        : LCMPAINTLVL0 0 _Bit ; \ Low Byte Compare A Interrupt Level bit 0 position
+        : LCMPAINTLVL1 1 _Bit ; \ Low Byte Compare A Interrupt Level bit 1 position
+        ;MODULE
+    MODULE: CTRLF_
+        : CMD0 2 _Bit ; \ Command bit 0 position
+        : CMD1 3 _Bit ; \ Command bit 1 position
+        : CMDEN0 0 _Bit ; \ Command Enable bit 0 position
+        : CMDEN1 1 _Bit ; \ Command Enable bit 1 position
+        ;MODULE
+    MODULE: INTFLAGS_
+        : LCMPDIF 7 _Bit ; \ Low Byte Compare D Interrupt Flag bit position
+        : LCMPCIF 6 _Bit ; \ Low Byte Compare C Interrupt Flag bit position
+        : LCMPBIF 5 _Bit ; \ Low Byte Compare B Interrupt Flag bit position
+        : LCMPAIF 4 _Bit ; \ Low Byte Compare A Interrupt Flag bit position
+        : HUNFIF 1 _Bit ; \ High Byte Underflow Interrupt Flag bit position
+        : LUNFIF 0 _Bit ; \ Low Byte Underflow Interrupt Flag bit position
+        ;MODULE
+    : CTRLA 0x00 + CTRLA_ ; \ Control Register A
+    : CTRLB 0x01 + CTRLB_ ; \ Control Register B
+    : CTRLC 0x02 + CTRLC_ ; \ Control register C
+    : CTRLE 0x04 + CTRLE_ ; \ Control Register E
+    : INTCTRLA 0x06 + INTCTRLA_ ; \ Interrupt Control Register A
+    : INTCTRLB 0x07 + INTCTRLB_ ; \ Interrupt Control Register B
+    : CTRLF 0x09 + CTRLF_ ; \ Control Register F
+    : INTFLAGS 0x0C + INTFLAGS_ ; \ Interrupt Flag Register
+    : LCNT 0x20 + ; \ Low Byte Count
+    : HCNT 0x21 + ; \ High Byte Count
+    : LPER 0x26 + ; \ Low Byte Period
+    : HPER 0x27 + ; \ High Byte Period
+    : LCMPA 0x28 + ; \ Low Byte Compare A
+    : HCMPA 0x29 + ; \ High Byte Compare A
+    : LCMPB 0x2A + ; \ Low Byte Compare B
+    : HCMPB 0x2B + ; \ High Byte Compare B
+    : LCMPC 0x2C + ; \ Low Byte Compare C
+    : HCMPC 0x2D + ; \ High Byte Compare C
+    : LCMPD 0x2E + ; \ Low Byte Compare D
+    : HCMPD 0x2F + ; \ High Byte Compare D
+    \  TC2 interrupt vectors
+    : LUNF> 0 _vector_offset ;
+    : HUNF> 2 _vector_offset ;
+    : LCMPA> 4 _vector_offset ;
+    : LCMPB> 6 _vector_offset ;
+    : LCMPC> 8 _vector_offset ;
+    : LCMPD> 10 _vector_offset ;
+    ;MODULE
+
+\ **************************************************************************
+\ * AWEX - Timer/Counter Advanced Waveform Extension
+\ **************************************************************************/
+MODULE: AWEX_
+    MODULE: CTRL_
+        : PGM 5 _Bit ; \ Pattern Generation Mode bit position
+        : CWCM 4 _Bit ; \ Common Waveform Channel Mode bit position
+        : DTICCDEN 3 _Bit ; \ Dead Time Insertion Compare Channel D Enable bit position
+        : DTICCCEN 2 _Bit ; \ Dead Time Insertion Compare Channel C Enable bit position
+        : DTICCBEN 1 _Bit ; \ Dead Time Insertion Compare Channel B Enable bit position
+        : DTICCAEN 0 _Bit ; \ Dead Time Insertion Compare Channel A Enable bit position
+        ;MODULE
+    MODULE: FDCTRL_
+        : FDDBD 4 _Bit ; \ Fault Detect on Disable Break Disable bit position
+        : FDMODE 2 _Bit ; \ Fault Detect Mode bit position
+        : FDACT0 0 _Bit ; \ Fault Detect Action bit 0 position
+        : FDACT1 1 _Bit ; \ Fault Detect Action bit 1 position
+        ;MODULE
+    MODULE: STATUS_
+        : FDF 2 _Bit ; \ Fault Detect Flag bit position
+        : DTHSBUFV 1 _Bit ; \ Dead Time High Side Buffer Valid bit position
+        : DTLSBUFV 0 _Bit ; \ Dead Time Low Side Buffer Valid bit position
+        ;MODULE
+
+    : CTRL 0x00 + CTRL_ ; \ Control Register
+    : FDEMASK 0x02 + ; \ Fault Detection Event Mask
+    : FDCTRL 0x03 + FDCTRL_ ; \ Fault Detection Control Register
+    : STATUS 0x04 + STATUS_ ; \ Status Register
+    : STATUSSET 0x05 + STATUS_ ; \ Status Set Register
+    : DTBOTH 0x06 + ; \ Dead Time Both Sides
+    : DTBOTHBUF 0x07 + ; \ Dead Time Both Sides Buffer
+    : DTLS 0x08 + ; \ Dead Time Low Side
+    : DTHS 0x09 + ; \ Dead Time High Side
+    : DTLSBUF 0x0A + ; \ Dead Time Low Side Buffer
+    : DTHSBUF 0x0B + ; \ Dead Time High Side Buffer
+    : OUTOVEN 0x0C + ; \ Output Override Enable
+    ;MODULE
+
+\ **************************************************************************
+\ * HIRES - Timer/Counter High-Resolution Extension
+\ **************************************************************************/
+MODULE: HIRES_
+    MODULE: CTRLA_
+        : HREN0 0 _Bit ; \ High Resolution Enable bit 0 position
+        : HREN1 1 _Bit ; \ High Resolution Enable bit 1 position
+        : HRPLUS 2 _Bit ; \ High Resolution Plus bit 2 position
+        ;MODULE
+     
+    : CTRLA 0x00 + CTRLA_ ; \ Control Register
+    ;MODULE
+
+\ **************************************************************************
+\ * USART - Universal Asynchronous Receiver-Transmitter
+\ **************************************************************************/
+MODULE: USART_
+    MODULE: STATUS_
+        : RXCIF 7 _Bit ; \ Receive Interrupt Flag bit position
+        : TXCIF 6 _Bit ; \ Transmit Interrupt Flag bit position
+        : DREIF 5 _Bit ; \ Data Register Empty Flag bit position
+        : FERR 4 _Bit ; \ Frame Error bit position
+        : BUFOVF 3 _Bit ; \ Buffer Overflow bit position
+        : PERR 2 _Bit ; \ Parity Error bit position
+        : RXB8 0 _Bit ; \ Receive Bit 8 bit position
+        ;MODULE
+    MODULE: CTRLA_
+        : RXCINTLVL0 4 _Bit ; \ Receive Interrupt Level bit 0 position
+        : RXCINTLVL1 5 _Bit ; \ Receive Interrupt Level bit 1 position
+        : TXCINTLVL0 2 _Bit ; \ Transmit Interrupt Level bit 0 position
+        : TXCINTLVL1 3 _Bit ; \ Transmit Interrupt Level bit 1 position
+        : DREINTLVL0 0 _Bit ; \ Data Register Empty Interrupt Level bit 0 position
+        : DREINTLVL1 1 _Bit ; \ Data Register Empty Interrupt Level bit 1 position
+        ;MODULE
+    MODULE: CTRLB_
+        : RXEN 4 _Bit ; \ Receiver Enable bit position
+        : TXEN 3 _Bit ; \ Transmitter Enable bit position
+        : CLK2X 2 _Bit ; \ Double transmission speed bit position
+        : MPCM 1 _Bit ; \ Multi-processor Communication Mode bit position
+        : TXB8 0 _Bit ; \ Transmit bit 8 bit position
+        ;MODULE
+    MODULE: CTRLC_
+        : CMODE0 6 _Bit ; \ Communication Mode bit 0 position
+        : CMODE1 7 _Bit ; \ Communication Mode bit 1 position
+        : PMODE0 4 _Bit ; \ Parity Mode bit 0 position
+        : PMODE1 5 _Bit ; \ Parity Mode bit 1 position
+        : SBMODE 3 _Bit ; \ Stop Bit Mode bit position
+        : CHSIZE0 0 _Bit ; \ Character Size bit 0 position
+        : CHSIZE1 1 _Bit ; \ Character Size bit 1 position
+        : CHSIZE2 2 _Bit ; \ Character Size bit 2 position
+        ;MODULE
+    MODULE: BAUDCTRLA_
+        : BSEL0 0 _Bit ; \ Baud Rate Selection Bits [7:0] bit 0 position
+        : BSEL1 1 _Bit ; \ Baud Rate Selection Bits [7:0] bit 1 position
+        : BSEL2 2 _Bit ; \ Baud Rate Selection Bits [7:0] bit 2 position
+        : BSEL3 3 _Bit ; \ Baud Rate Selection Bits [7:0] bit 3 position
+        : BSEL4 4 _Bit ; \ Baud Rate Selection Bits [7:0] bit 4 position
+        : BSEL5 5 _Bit ; \ Baud Rate Selection Bits [7:0] bit 5 position
+        : BSEL6 6 _Bit ; \ Baud Rate Selection Bits [7:0] bit 6 position
+        : BSEL7 7 _Bit ; \ Baud Rate Selection Bits [7:0] bit 7 position
+        ;MODULE
+    MODULE: BAUDCTRLB_
+        : BSEL8 0 _Bit ; \ Baud Rate Selection Bits [11:8] bit 8 position
+        : BSEL9 1 _Bit ; \ Baud Rate Selection Bits [11:8] bit 9 position
+        : BSEL10 2 _Bit ; \ Baud Rate Selection Bits [11:8] bit 10 position
+        : BSEL11 3 _Bit ; \ Baud Rate Selection Bits [11:8] bit 11 position
+        : BSCALE0 4 _Bit ; \ Baud Rate Scale bit 0 position
+        : BSCALE1 5 _Bit ; \ Baud Rate Scale bit 1 position
+        : BSCALE2 6 _Bit ; \ Baud Rate Scale bit 2 position
+        : BSCALE3 7 _Bit ; \ Baud Rate Scale bit 3 position
+        ;MODULE
+
+    : DATA 0x00 + ; \ Data Register
+    : STATUS 0x01 + STATUS_ ; \ Status Register
+    : CTRLA 0x03 + CTRLA_ ; \ Control Register A
+    : CTRLB 0x04 + CTRLB_ ; \ Control Register B
+    : CTRLC 0x05 + CTRLC_ ; \ Control Register C
+    : BAUDCTRLA 0x06 + BAUDCTRLA_ ; \ Baud Rate Control Register A
+    : BAUDCTRLB 0x07 + BAUDCTRLB_ ; \ Baud Rate Control Register B
+    \  USART interrupt vectors
+    : RXC> 0 _vector_offset ;
+    : DRE> 2 _vector_offset ;
+    : TXC> 4 _vector_offset ;
+    ;MODULE
+
+\ **************************************************************************
+\ * SPI - Serial Peripheral Interface
+\ **************************************************************************/
+MODULE: SPI_
+    MODULE: CTRL_
+        : CLK2X 7 _Bit ; \ Enable Double Speed bit position
+        : ENABLE 6 _Bit ; \ Enable Module bit position
+        : DORD 5 _Bit ; \ Data Order Setting bit position
+        : MASTER 4 _Bit ; \ Master Operation Enable bit position
+        : MODE0 2 _Bit ; \ SPI Mode bit 0 position
+        : MODE1 3 _Bit ; \ SPI Mode bit 1 position
+        : PRESCALER0 0 _Bit ; \ Prescaler bit 0 position
+        : PRESCALER1 1 _Bit ; \ Prescaler bit 1 position
+        ;MODULE
+    MODULE: INTCTRL_
+        : INTLVL0 0 _Bit ; \ Interrupt level bit 0 position
+        : INTLVL1 1 _Bit ; \ Interrupt level bit 1 position
+        ;MODULE
+    MODULE: STATUS_
+        : IF 7 _Bit ; \ Interrupt Flag bit position
+        : WRCOL 6 _Bit ; \ Write Collision bit position
+        ;MODULE
+
+    : CTRL 0x00 + CTRL_ ; \ Control Register
+    : INTCTRL 0x01 + INTCTRL_ ; \ Interrupt Control Register
+    : STATUS 0x02 + STATUS_ ; \ Status Register
+    : DATA 0x03 + ; \ Data Register
+    \  SPI interrupt vectors
+    : INT> 0 _vector_offset ;
+    ;MODULE
+
+\ **************************************************************************
+\ * IRCOM - IR Communication Module
+\ **************************************************************************/
+MODULE: IRCOM_
+    MODULE: CTRL_
+    : EVSEL0 0 _Bit ; \ Event Channel Select bit 0 position
+    : EVSEL1 1 _Bit ; \ Event Channel Select bit 1 position
+    : EVSEL2 2 _Bit ; \ Event Channel Select bit 2 position
+    : EVSEL3 3 _Bit ; \ Event Channel Select bit 3 position
+    ;MODULE
+    
+    : CTRL 0x00 + CTRL_ ; \ Control Register
+    : TXPLCTRL 0x01 + ; \ IrDA Transmitter Pulse Length Control Register
+    : RXPLCTRL 0x02 + ; \ IrDA Receiver Pulse Length Control Register
+    ;MODULE
+
+\ **************************************************************************
+\ * FUSE - Fuses and Lockbits
+\ **************************************************************************/
+MODULE: LOCK_
+    MODULE: LOCKBITS_
+        : BLBB0 6 _Bit ; \ Boot Lock Bits - Boot Section bit 0 position
+        : BLBB1 7 _Bit ; \ Boot Lock Bits - Boot Section bit 1 position
+        : BLBA0 4 _Bit ; \ Boot Lock Bits - Application Section bit 0 position
+        : BLBA1 5 _Bit ; \ Boot Lock Bits - Application Section bit 1 position
+        : BLBAT0 2 _Bit ; \ Boot Lock Bits - Application Table bit 0 position
+        : BLBAT1 3 _Bit ; \ Boot Lock Bits - Application Table bit 1 position
+        : LB0 0 _Bit ; \ Lock Bits bit 0 position
+        : LB1 1 _Bit ; \ Lock Bits bit 1 position
+        ;MODULE
+    : LOCKBITS 0x00 + LOCKBITS_ ; \ Lock Bits
+    ;MODULE
+
+MODULE: FUSE_
+    MODULE: FUSEBYTE0_
+        : JTAGUSERID0 0 _Bit ; \ JTAG User ID bit 0 position
+        : JTAGUSERID1 1 _Bit ; \ JTAG User ID bit 1 position
+        : JTAGUSERID2 2 _Bit ; \ JTAG User ID bit 2 position
+        : JTAGUSERID3 3 _Bit ; \ JTAG User ID bit 3 position
+        : JTAGUSERID4 4 _Bit ; \ JTAG User ID bit 4 position
+        : JTAGUSERID5 5 _Bit ; \ JTAG User ID bit 5 position
+        : JTAGUSERID6 6 _Bit ; \ JTAG User ID bit 6 position
+        : JTAGUSERID7 7 _Bit ; \ JTAG User ID bit 7 position
+        ;MODULE
+    MODULE: FUSEBYTE1_
+        : WDWP0 4 _Bit ; \ Watchdog Window Timeout Period bit 0 position
+        : WDWP1 5 _Bit ; \ Watchdog Window Timeout Period bit 1 position
+        : WDWP2 6 _Bit ; \ Watchdog Window Timeout Period bit 2 position
+        : WDWP3 7 _Bit ; \ Watchdog Window Timeout Period bit 3 position
+        : WDP0 0 _Bit ; \ Watchdog Timeout Period bit 0 position
+        : WDP1 1 _Bit ; \ Watchdog Timeout Period bit 1 position
+        : WDP2 2 _Bit ; \ Watchdog Timeout Period bit 2 position
+        : WDP3 3 _Bit ; \ Watchdog Timeout Period bit 3 position
+        ;MODULE
+    MODULE: FUSEBYTE2_
+        : BOOTRST 6 _Bit ; \ Boot Loader Section Reset Vector bit position
+        : TOSCSEL 5 _Bit ; \ Timer Oscillator pin location bit position
+        : BODPD0 0 _Bit ; \ BOD Operation in Power-Down Mode bit 0 position
+        : BODPD1 1 _Bit ; \ BOD Operation in Power-Down Mode bit 1 position
+        ;MODULE
+    MODULE: FUSEBYTE4_
+        : RSTDISBL 4 _Bit ; \ External Reset Disable bit position
+        : SUT0 2 _Bit ; \ Start-up Time bit 0 position
+        : SUT1 3 _Bit ; \ Start-up Time bit 1 position
+        : WDLOCK 1 _Bit ; \ Watchdog Timer Lock bit position
+        : JTAGEN 0 _Bit ; \ JTAG Interface Enable bit position
+        ;MODULE
+    MODULE: FUSEBYTE5_
+        : BODACT0 4 _Bit ; \ BOD Operation in Active Mode bit 0 position
+        : BODACT1 5 _Bit ; \ BOD Operation in Active Mode bit 1 position
+        : EESAVE 3 _Bit ; \ Preserve EEPROM Through Chip Erase bit position
+        : BODLVL0 0 _Bit ; \ Brown Out Detection Voltage Level bit 0 position
+        : BODLVL1 1 _Bit ; \ Brown Out Detection Voltage Level bit 1 position
+        : BODLVL2 2 _Bit ; \ Brown Out Detection Voltage Level bit 2 position
+        ;MODULE
+
+    : FUSEBYTE0 0x00 + FUSEBYTE0_ ; \ JTAG User ID
+    : FUSEBYTE1 0x01 + FUSEBYTE1_ ; \ Watchdog Configuration
+    : FUSEBYTE2 0x02 + FUSEBYTE2_ ; \ Reset Configuration
+    : FUSEBYTE4 0x04 + FUSEBYTE4_ ; \ Start-up Configuration
+    : FUSEBYTE5 0x05 + FUSEBYTE5_ ; \ EESAVE and BOD Level
+    ;MODULE
+
+\ **************************************************************************
+\ * SIGROW - Signature Row
+\ **************************************************************************/
+MODULE: SIGROW
+    : RCOSC2M 0x00  ;      \  RCOSC 2 MHz Calibration Value B
+    : RCOSC2MA 0x01  ;     \  RCOSC 2 MHz Calibration Value A
+    : RCOSC32K 0x02  ;     \  RCOSC 32.768 kHz Calibration Value
+    : RCOSC32M 0x03  ;     \  RCOSC 32 MHz Calibration Value B
+    : RCOSC32MA 0x04  ;    \  RCOSC 32 MHz Calibration Value A
+    : LOTNUM0 0x08  ;      \  Lot Number Byte 0, ASCII
+    : LOTNUM1 0x09  ;      \  Lot Number Byte 1, ASCII
+    : LOTNUM2 0x0A  ;      \  Lot Number Byte 2, ASCII
+    : LOTNUM3 0x0B  ;      \  Lot Number Byte 3, ASCII
+    : LOTNUM4 0x0C  ;      \  Lot Number Byte 4, ASCII
+    : LOTNUM5 0x0D  ;      \  Lot Number Byte 5, ASCII
+    : WAFNUM 0x10  ;       \  Wafer Number
+    : COORDX0 0x12  ;      \  Wafer Coordinate X Byte 0
+    : COORDX1 0x13  ;      \  Wafer Coordinate X Byte 1
+    : COORDY0 0x14  ;      \  Wafer Coordinate Y Byte 0
+    : COORDY1 0x15  ;      \  Wafer Coordinate Y Byte 1
+    : USBCAL0 0x1A  ;      \  USB Calibration Byte 0
+    : USBCAL1 0x1B  ;      \  USB Calibration Byte 1
+    : USBRCOSC 0x1C  ;     \  USB RCOSC Calibration Value B
+    : USBRCOSCA 0x1D  ;    \  USB RCOSC Calibration Value A
+    : ADCACAL0 0x20  ;     \  ADCA Calibration Byte 0
+    : ADCACAL1 0x21  ;     \  ADCA Calibration Byte 1
+    : ADCBCAL0 0x24  ;     \  ADCB Calibration Byte 0
+    : ADCBCAL1 0x25  ;     \  ADCB Calibration Byte 1
+    : TEMPSENSE0 0x2E  ;   \  Temperature Sensor Calibration Byte 0
+    : TEMPSENSE1 0x2F  ;   \  Temperature Sensor Calibration Byte 1
+    : DACA0OFFCAL 0x30  ;  \  DACA0 Calibration Byte 0
+    : DACA0GAINCAL 0x31  ; \  DACA0 Calibration Byte 1
+    : DACB0OFFCAL 0x32  ;  \  DACB0 Calibration Byte 0
+    : DACB0GAINCAL 0x33  ; \  DACB0 Calibration Byte 1
+    : DACA1OFFCAL 0x34  ;  \  DACA1 Calibration Byte 0
+    : DACA1GAINCAL 0x35  ; \  DACA1 Calibration Byte 1
+    : DACB1OFFCAL 0x36  ;  \  DACB1 Calibration Byte 0
+    : DACB1GAINCAL 0x37  ; \  DACB1 Calibration Byte 1
+    ;MODULE
+
+

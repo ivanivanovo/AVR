@@ -1,0 +1,4 @@
+.e isn't unique (/home/ivanov/spf-4.20/lib/include/float2.f)
+Exception #-2003 at: /home/ivanov/IvaMobi2/Person/Job/Projects/RF-16/DRF7020/prog/AVR/libs/tables.f:21:9:
+    NEW>S
+       ^ -2003 слово или файл не найден
