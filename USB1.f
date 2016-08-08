@@ -1,93 +1,27 @@
 
 \ минимальная реализация работы с libUSB-1.0 
 [WITHOUT?] USB_TYPE_STANDARD S" ~iva/AVR/USB_const.f" INCLUDED [THEN]
+[WITHOUT?] LIBUSB_LOG_LEVEL_INFO S" ~iva/AVR/libusbx_structures.f" INCLUDED [THEN]
+
 DECIMAL
-USE libusb-1.0.so.0  \ используем библиотеку libusb 1.0
+\ USE libusb-1.0.so.0  \ используем библиотеку libusb 1.0
+USE libusb-1.0.so  \ используем библиотеку libusb 1.0
 VARIABLE &ctx 0 &ctx ! \ переменная контекст 
 #def ctx &ctx @
 VARIABLE &listDev \ переменная указывающая на список USB устройств в системе
 #def listDev &listDev @
 VARIABLE &hand
 #def hand &hand @
+VARIABLE  &CnfDesc  
+#def CnfDesc &CnfDesc @
 
 
 0 VALUE USB_TIMEOUT \ No default USB Timeout
+LIBUSB_LOG_LEVEL_INFO VALUE dbgLevel \ отладочный уровень
 
-0 CONSTANT LIBUSB_LOG_LEVEL_NONE    \ нет сообщений
-1 CONSTANT LIBUSB_LOG_LEVEL_ERROR   \ сообщения об ошибках выводятся в stderr
-2 CONSTANT LIBUSB_LOG_LEVEL_WARNING \ сообщения об ошибках и предупреждениях выводятся в stderr
-3 CONSTANT LIBUSB_LOG_LEVEL_INFO    \ информационные пакеты выводятся в stdout, а ошибки и предупреждения в stderr
-4 CONSTANT LIBUSB_LOG_LEVEL_DEBUG   \ отладочные и информационные пакеты выводятся в stdout, а ошибки и предупреждения в stderr
-3 VALUE dbgLevel \ отладочный уровень
-
-\ коды ошибок libusb
- 0  CONSTANT LIBUSB_SUCCESS                     
--1  CONSTANT LIBUSB_ERROR_IO                      
--2  CONSTANT LIBUSB_ERROR_INVALID_PARAM               
--3  CONSTANT LIBUSB_ERROR_ACCESS                      
--4  CONSTANT LIBUSB_ERROR_NO_DEVICE                      
--5  CONSTANT LIBUSB_ERROR_NOT_FOUND                     
--6  CONSTANT LIBUSB_ERROR_BUSY                              
--7  CONSTANT LIBUSB_ERROR_TIMEOUT                                  
--8  CONSTANT LIBUSB_ERROR_OVERFLOW                               
--9  CONSTANT LIBUSB_ERROR_PIPE                               
--10 CONSTANT LIBUSB_ERROR_INTERRUPTED                        
--11 CONSTANT LIBUSB_ERROR_NO_MEM                                  
--12 CONSTANT LIBUSB_ERROR_NOT_SUPPORTED                       
-
-WARNING @
-WARNING OFF
-0 
-    1 -- bLength
-    1 -- bDescriptorType  
-    2 -- bcdUSB  
-    1 -- bDeviceClass 
-    1 -- bDeviceSubClass 
-    1 -- bDeviceProtocol 
-    1 -- bMaxPacketSize0 
-    2 -- idVendor 
-    2 -- idProduct 
-    2 -- bcdDevice 
-    1 -- iManufacturer 
-    1 -- iProduct 
-    1 -- iSerialNumber 
-    1 -- bNumConfigurations
-CONSTANT libusb_device_descriptor
 libusb_device_descriptor ALLOCATE THROW VALUE DevDesc \ взяли память из кучи под один экземпляр struct
 
-\
- 0 
-   1 -- bLength  
-   1 -- bDescriptorType  
-   2 -- wTotalLength  
-   1 -- bNumInterfaces  
-   1 -- bConfigurationValue  
-   1 -- iConfiguration  
-   1 -- bmAttributes  
-   1 -- MaxPower  
-   ALIGNED 
-   CELL -- *interface \ указатель на массив struct libusb_interface
-   CELL -- *CND_extra  \ указатель на байтовый массив
-   CELL --  CND_extra_length 
- CONSTANT libusb_config_descriptor 
 \ libusb_config_descriptor   ALLOCATE THROW VALUE CnfDesc \ взяли память из кучи под один экземпляр struct
-VARIABLE  &CnfDesc  #def CnfDesc &CnfDesc @
-\ 
- 0
-   1 -- bLength  
-   1 -- bDescriptorType  
-   1 -- bInterfaceNumber  
-   1 -- bAlternateSetting  
-   1 -- bNumEndpoints  
-   1 -- bInterfaceClass  
-   1 -- bInterfaceSubClass  
-   1 -- bInterfaceProtocol  
-   1 -- iInterface  
-   ALIGNED 
-   CELL -- *endpoint  \ указатель на массив struct libusb_endpoint_descriptor 
-   CELL -- *IND_extra  \ указатель на байтовый массив
-   CELL --  IND_extra_length   
- CONSTANT libusb_interface_descriptor 
 \ libusb_interface_descriptor  ALLOCATE THROW VALUE InDesc \ взяли память из кучи под один экземпляр struct
 \ 
 \ 0
@@ -95,32 +29,15 @@ VARIABLE  &CnfDesc  #def CnfDesc &CnfDesc @
 \   CELL -- num_altsetting   
 \ CONSTANT libusb_interface 
 \ libusb_interface   ALLOCATE THROW VALUE interface \ взяли память из кучи под один экземпляр struct
-\ 
- 0
-   1 -- bLength  
-   1 -- bDescriptorType  
-   1 -- bEndpointAddress  
-   1 -- bAttributes  
-   2 -- wMaxPacketSize  
-   1 -- bInterval  
-   1 -- bRefresh  
-   1 -- bSynchAddress  
-  ALIGNED
-   CELL -- *EPD_extra  \ указатель на байтовый массив
-   CELL -- EPD_extra_length  
- CONSTANT libusb_endpoint_descriptor 
 \ libusb_endpoint_descriptor ALLOCATE THROW VALUE EpDesc \ взяли память из кучи под один экземпляр struct
 \ 
-
-
-
 \    (( &ctx )) libusb_init DROp \ libusb_init(&ctx); 
 \    (( ctx  &listDev )) libusb_get_device_list \ count = libusb_get_device_list(ctx, &listDev)
 \    cr . cr
 \     \ libusb_get_device_descriptor(device, &desc)
 \    desc libusb_device_descriptor dump
 \    cr
-WARNING !
+
 : errorUSB ( u -- ) \ обработка ошибок
   ?DUP LIBUSB_SUCCESS = IF EXIT THEN
   DUP  LIBUSB_ERROR_IO = ABORT" libusb - ошибка ввода-вывода."
@@ -203,7 +120,8 @@ CREATE ListDevs 16 CELLS ALLOT   \ мешок искомых устройств
     IF  (( hand )) libusb_close errorUSB  THEN \ закрыть
     ;
 
-
+( jjjiikk;
+ ) 
 : findUSBprog ( vid pid -- err) \ ищет USB-програматоры
     0 -ROT \ код завершения по умолчанию
     VPid 2!
