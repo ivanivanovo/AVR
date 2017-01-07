@@ -164,10 +164,15 @@ VARIABLE last-label
 : Nick ( type n "name" --) \ создать структуру метки "name"
     Label_ BL WORD COUNT str!  \ имя метки
     ;
+
 : !label: ( type n "name" --) \ создать слово и структуру метки "name"
     >IN @ CREATE >IN ! Nick
           DOES> DUP label-count 1+! \ увеличить счётчик вызовов
                     label-value @   \ выдать значение 
+    ;
+: !label(S): ( type n adr u  --) \ создать слово и структуру метки с именем из строки adr u
+    S" !label: " >S +>S
+    S@ EVALUATE S>DROP
     ;
 
 : label: ( type "name" --) finger !label: ;

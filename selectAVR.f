@@ -50,7 +50,7 @@ S" ~iva/AVR/chips/" >S \ где искать файлы описания мик�
             S" ../AVR_instructions.set" +>S 
     [THEN] 
 
-S@ INCLUDED S>DROP \ загрузим файл
+0 EMIT>S S@ INCLUDED S>DROP \ добавляем ноль в конец, загрузим файл
 LABELS> CR
 
 [FOUND?] WARNING [IF] WARNING ON [THEN]

@@ -144,11 +144,11 @@ HEX[
        4 #BitIs PORTA4  \ 
        4 #BitIs PA4     \ For compatibility
        5 #BitIs PORTA5  \ 
-       5 #BitIs PB5     \ For compatibility
+       5 #BitIs PA5     \ For compatibility
        6 #BitIs PORTA6  \ 
-       6 #BitIs PB6     \ For compatibility
+       6 #BitIs PA6     \ For compatibility
        7 #BitIs PORTA7  \ 
-       7 #BitIs PB7     \ For compatibility
+       7 #BitIs PA7     \ For compatibility
 
     BitsIn DDRA \ Data Direction Register, Port A
        0 #BitIs DDA0    \ 
@@ -432,6 +432,9 @@ HEX[
        4 #BitIs SM1     \ Sleep Mode Select Bit 1
        5 #BitIs SE      \ Sleep Enable
        6 #BitIs PUD     \ Pull-up Disable
+       \ liter A only
+       2 #BitIs BODSE   \ BOD Sleep Enable
+       7 #BitIS BODS    \ BOD Sleep
 
     BitsIn MCUSR \ MCU Status register
        0 #BitIs PORF    \ Power-On Reset Flag

@@ -62,19 +62,15 @@ VARIABLE CODING? \ счётчик состояния кодирования
 : FILTER ( adr u -- adr' u')  \ изменить строку
     DUP 0 > 
     IF  OVER + SWAP 
-        DO  I DUP C@ DUP
-            [CHAR] , = 
-            IF BLS 1 +>S 2DROP \ баним запятые пробелом
-            ELSE DUP [CHAR] - = 
-                IF DROP BLS 1 +>S 1 +>S \ пробел ПЕРЕД минусом
-                ELSE  [CHAR] + =
-                    IF  1 +>S BLS 1 +>S \ пробел ПОСЛЕ плюса
-                    ELSE 1 +>S \ просто копируем
-                    THEN
-                THEN
+        DO  I C@ 
+            DUP [CHAR] , = 
+            IF DROP BL EMIT>S  \ баним запятые пробелом
+            ELSE \ DUP [CHAR] - = IF BL EMIT>S THEN \ пробел ПЕРЕД минусом \ он и так сам получается
+                DUP EMIT>S ( копируем символ)  
+                [CHAR] + = IF BL EMIT>S THEN \ пробел ПОСЛЕ плюса
             THEN
         LOOP
-        S@  
+        S@ \ 2dup type cr
     ELSE DROP 0
     THEN
     ;
@@ -87,28 +83,43 @@ VARIABLE CODING? \ счётчик состояния кодирования
     CODING? @ 0= IF <DASSM THEN \ подключить словарь ассемблирования
     1 CODING? +! 
     BEGIN 
-        CODING? @
+        CODING? @ 
     WHILE 
         NEW>S \ подготовить место
-            SOURCE >IN @ /STRING
+            SOURCE >IN @ OVER >IN ! /STRING \  взять остаток строки из входного потока и передвинуть указатель 
             FILTER
             EVALUATE  
         S>DROP \ освободить место
-        REFILL 0= THROW  
-    REPEAT 
-    ; 
+        REFILL 
+    WHILE REPEAT
+    THEN
+    ;
+
 VARIABLE codeDep \ контроль изменения глубины стека
 <DASSM \ в словарь ассемблирования
-: ]C ( )  \ выключить фильтрацию
-    0 coder 
-    CODING? @ 0 > if -1 CODING? +! then
-    CODING? @ 0 = IF  DASSM> THEN \ отключить словарь ассемблирования
-    ; 
-: C;  ]C  \ завершить  кодирование
-    DEPTH codeDep @ - 
-    DUP 0 < ABORT" В коде нехватает операндов." 
-    ABORT" В коде лишние операнды." 
-    ;   
+    : ]C ( )  \ выключить фильтрацию
+        0 coder 
+        CODING? @ 0 > if -1 CODING? +! then
+        CODING? @ 0 = IF  DASSM> THEN \ отключить словарь ассемблирования
+        ; 
+    : C;  ]C  \ завершить  кодирование
+        DEPTH codeDep @ - 
+        DUP 0 < ABORT" В коде нехватает операндов." 
+        ABORT" В коде лишние операнды." 
+        ;   
+    
+    WARNING @ FALSE WARNING !
+    : NOTFOUND ( adr u -- ) \ попытка обработать ненайденное слово, как внутреннюю метку
+        2DUP + 1- C@ [CHAR] : = \ двоеточие в конце?
+        IF \ да - делаем маркер 
+            2>R \ отложить строку с именем
+            ]C \ завершить предыдущий оператор
+                MarkType finger 2R> 1- !label(S): \ маркер с именем без двоеточия в конце
+                0 THROW \ разрешение исключения
+            C[    
+        ELSE  NOTFOUND THEN
+        ;
+    WARNING !    
 DASSM>
 
 : CODE ( <"Name"> --) \ начать новое определение именем "Name"

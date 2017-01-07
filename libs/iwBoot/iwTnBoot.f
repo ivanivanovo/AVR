@@ -15,6 +15,7 @@ BitsIn ii ( aka cmd.#)
 code prgWad> (  -- ) \ пыж прогамматора
     ldi r,2 ldiW Y,iwFifOut rcall WtakeBuf
     if_nt
+        st Y+,r \ запись n в голову пакета
         \ константа
         ldiW R,prgWad  st y+,rH st y+,r
         ldiW Y,iwFifOut rcall WendBufP  \ передвинуть индекс записи 
