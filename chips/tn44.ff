@@ -15,5 +15,5 @@ HEX[
 ]HEX
 32    CONSTANT      PAGESIZE    \ number of WORDS in a page
 
-S" ATtiny24-44-84.ff" INCLUDED
+S" ~iva/AVR/chips/ATtiny24-44-84.ff" INCLUDED
 

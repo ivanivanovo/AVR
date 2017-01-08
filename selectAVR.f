@@ -65,7 +65,6 @@ LABELS> CR
         UNTIL 
         ; EXECUTE 
 DASSM>
- 4 take VerSign \ резервирование места под версию и сигнатуру прошивки
 
  S" ~iva/AVR/bitsAVR.f" INCLUDED  \ подключить битовые слова
  S" ~iva/AVR/fuses.f"   INCLUDED  \ для работы с фузами и локами
