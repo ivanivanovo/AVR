@@ -99,7 +99,7 @@ VARIABLE codeDep \ контроль изменения глубины стека
 <DASSM \ в словарь ассемблирования
     : ]C ( )  \ выключить фильтрацию
         0 coder 
-        CODING? @ 0 > if -1 CODING? +! then
+        CODING? @ 0 > IF -1 CODING? +! THEN
         CODING? @ 0 = IF  DASSM> THEN \ отключить словарь ассемблирования
         ; 
     : C;  ]C  \ завершить  кодирование

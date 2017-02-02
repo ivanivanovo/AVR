@@ -244,5 +244,22 @@ code MULS_16 \ умножение со знаком
     mulsu BmH,AmL clr AmH sbci AmH,0 add CmH,R0 adc DmL,R1 adc DmH,AmH 
     ret  c;
 
+#def tH r0
+#def rA R
+#def rB X
+code Mul16 ( rA rB -- A*B ) \ 16-ти разрядные сомножители, 32-разрядный результат
+\ rA - номер младшего регистра пары первого сомножителя
+\ rB - номер младшего регистра пары второго сомножителя
+\ результат замещает сомножители
+\ старший->rA младший->rB    
+    pushW tH \ служебная пара
+    push ii
+        clrW tH  ldi ii,16  lsrW rB
+        for 
+            if_c addW tH,rA then rorW tH rorW rB
+        next ii
+        movW rA,tH
+    pop ii popW tH
+    ret c;
 
 

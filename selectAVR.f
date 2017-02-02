@@ -29,15 +29,15 @@ S" ~iva/AVR/chips/" >S \ где искать файлы описания мик�
         device 0x 910C = [IF]   .( Процессор ATtiny261 ) S" tn261.ff"   +>S [THEN]
 \        device 0x 910A = [IF]   .( Процессор ATtiny2313) S" tn2313.ff"  +>S [THEN]
         device 0x 910A = [IF]   .( Процессор ATtiny2313A) S" tn2313A.ff"  +>S [THEN]
-        device 0x 920D = [IF]   .( Процессор ATtiny4313) S" tn4313.fs"  +>S [THEN]
+        device 0x 920D = [IF]   .( Процессор ATtiny4313) S" tn4313.ff"  +>S [THEN]
         device 0x 9205 = [IF]   .( Процессор ATmega48)   S" m48.ff"     +>S [THEN]
         device 0x 920A = [IF]   .( Процессор ATmega48P)  S" m48pa.ff"   +>S [THEN]
         device 0x 930F = [IF]   .( Процессор ATmega88P)  S" m88pa.ff"   +>S [THEN]
         device 0x 940B = [IF]   .( Процессор ATmega168PA)  S" m168pa.ff"   +>S [THEN]
         device 0x 9406 = [IF]   .( Процессор ATmega168A)  S" m168a.ff"  +>S [THEN]
-		device 0x 9514 = [IF]   .( Процессор ATmega328)  S" m328.ff"    +>S [THEN]        
+        device 0x 9514 = [IF]   .( Процессор ATmega328)  S" m328.ff"    +>S [THEN]
         device 0x 9108 = [IF]   .( Процессор ATtiny25)   S" tn25.ff"    +>S [THEN]
-		device 0x 910B = [IF]   .( Процессор ATtiny24)   S" tn24.ff"    +>S [THEN]
+        device 0x 910B = [IF]   .( Процессор ATtiny24)   S" tn24.ff"    +>S [THEN]
         device 0x 9206 = [IF]   .( Процессор ATtiny45)   S" tn45.ff"    +>S [THEN]
         device 0x 9207 = [IF]   .( Процессор ATtiny44)   S" tn44.ff"    +>S [THEN]
         device 0x 930B = [IF]   .( Процессор ATtiny85)   S" tn85.ff"    +>S [THEN]
@@ -50,7 +50,7 @@ S" ~iva/AVR/chips/" >S \ где искать файлы описания мик�
             S" ../AVR_instructions.set" +>S 
     [THEN] 
 
-0 EMIT>S S@ INCLUDED S>DROP \ добавляем ноль в конец, загрузим файл
+0 EMIT>S S@  INCLUDED S>DROP \ добавляем ноль в конец, загрузим файл
 LABELS> CR
 
 [FOUND?] WARNING [IF] WARNING ON [THEN]
@@ -73,7 +73,7 @@ DASSM>
  S" ~iva/AVR/programmers.f" INCLUDED  \ подключить программаторы
 
 \ установить указатель на начало SRAM, если оно есть
-RAMEND 0 > [IF] ram[ SRAM_START org ]ram [THEN] 
+RAMEND 0 > [IF] RAM[ SRAM_START ORG ]RAM [THEN] 
 VOCABULARY PROJECT \ словарь проекта
 ALSO PROJECT DEFINITIONS
 

@@ -95,8 +95,8 @@ SAVE-VOCS ALSO DASSM DEFINITIONS
         (SWAP) IFSREG  BCLR          EXIF; \ если бит расположен в SREG
         NOBIT ;
 
-: _/    set_b ;
-: \_    clr_b ;
+: _/    SET_B ;
+: \_    CLR_B ;
 
 : T>BIT ( "BIT" --) \ загрузить Т в бит с именем  "BIT"
     <BITS DOAFTER> BITS>  ADR_BIT
@@ -209,7 +209,7 @@ SAVE-VOCS ALSO DASSM DEFINITIONS
 : THEN ( V: orign-- )   \ разрешить ссылку вперед   на "сюда" 
     \ скомпилировать предыдущую команду
     DOAFTER>
-    finger DUP itMark  DUP          \ запомнить "сюда" 
+    finger DUP ItMark  DUP          \ запомнить "сюда" 
            1V> finger!  \ переставить finger
            fingerA W@   \ прочитать что за команда там находится
            find-opcode operator ! \ подготовить её к повторному исполнения

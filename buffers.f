@@ -115,7 +115,7 @@ S" ~iva/AVR/opcodes.f"   INCLUDED \ для работы описанием ко�
 \        ROT IF OR ELSE INVERT AND THEN fingerA !
 \        ;
 : B>Seg ( f # --) \ запись бита #=(0..)
-    8 CELLS /mod >R 1 SWAP LSHIFT 
+    8 CELLS /MOD >R 1 SWAP LSHIFT 
     fingerA R> CELLS + DUP >R @  SWAP
     ROT IF OR ELSE INVERT AND THEN R> !
     ;
@@ -133,7 +133,7 @@ S" ~iva/AVR/opcodes.f"   INCLUDED \ для работы описанием ко�
     8 CELLS 1- AND
     fingerA @ SWAP RSHIFT 1 AND 0= 0= ;
 : SegA ( n -- addr) \ выдать реальный адрес смещения n
-    Seg @ + ;
+    SEG @ + ;
 \ ======== ТЕСТЫ И ПРИМЕРЫ =====================================================
 \ 30  22 createSeg: ROM-SEG
 \ ROM-SEG TO SEG

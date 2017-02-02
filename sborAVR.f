@@ -52,51 +52,57 @@ SAVE-VOCS ALSO DASSM DEFINITIONS
     ;
 : ADDI ( <"Rd k"> --)
     DOAFTER> ( Rd k -- )
-    DUP 255 > abort" Операнд больше байта"
+    DUP 255 > ABORT" Операнд больше байта"
     NEGATE (LB) ( Rd lowByte[-k] --)
-    subi
+    SUBI
     ;
 : SUBIW ( <"Rd k"> -- )
     DOAFTER> ( Rd k -- )
-    DUP 65535 > abort" Операнд больше двух байт"
+    DUP 65535 > ABORT" Операнд больше двух байт"
     >R
     DUP 1+ (SWAP) ( Rd+1 Rd --)
     R@ (HB) (SWAP) R> (LB) ( Rd+1 highByte[k] Rd lowByte[k] --)
-    subi sbci
+    SUBI SBCI
     ;
 : ADDIW ( <"Rd k"> -- )
     DOAFTER> ( Rd k -- )
-    DUP 65535 > abort" Операнд больше двух байт"
+    DUP 65535 > ABORT" Операнд больше двух байт"
     NEGATE 0xFFFF (AND)
     SUBIW
     ;
+[WITH?] ADIW
+: NEGW ( <"Rd"> --) \ смена знака пары регистров
+    DOAFTER> ( Rd -- )
+    1 OVER COMW ADIW 
+    ;
+[THEN]    
 : ADDW ( <"Rd Rr"> -- )
     DOAFTER> ( Rd Rr -- )
-    DUPLET 2SWAP add adc
+    DUPLET 2SWAP ADD ADC
     ;
 : SUBW ( <"Rd Rr"> -- )
     DOAFTER> ( Rd Rr -- )
-    DUPLET 2SWAP sub sbc
+    DUPLET 2SWAP SUB SBC
     ;
 : ASRW ( <"Rd"> --) \ арифметический сдвиг пары регистров
     DOAFTER> ( Rd -- )
-    DUP 1+ asr ror
+    DUP 1+ ASR ROR
     ;
 : LSRW ( <"Rd"> --) \ логический сдвиг пары регистров вправо
     DOAFTER> ( Rd -- )
-    DUP 1+ lsr ror
+    DUP 1+ LSR ROR
     ;    
 : LSLW ( <"Rd"> --) \ логический сдвиг пары регистров влево
     DOAFTER> ( Rd -- )
-    DUP 1+ (SWAP) lsl rol
+    DUP 1+ (SWAP) LSL ROL
     ;    
 : RORW ( <"Rd"> --) \ циклический сдвиг пары регистров вправо
     DOAFTER> ( Rd -- )
-    DUP 1+ ror ror
+    DUP 1+ ROR ROR
     ;    
 : ROLW ( <"Rd"> --) \ циклический сдвиг пары регистров влево
     DOAFTER> ( Rd -- )
-    DUP 1+ (SWAP) rol rol
+    DUP 1+ (SWAP) ROL ROL
     ;    
 
 WARNING OFF
@@ -150,7 +156,7 @@ WARNING OFF
 [WITH?] MOVW 
 \ вариант при наличии MOVW в системе команд
 : 2evenReg? ( adr adr --f) \ проверить принадлежат ли эти адреса четным регистрам
-    OVER REG? OVER REG? (AND) \ true - оба регистры
+    OVER Reg? OVER Reg? (AND) \ true - оба регистры
     ROT 1 (AND) ROT 1 (AND) (OR) 0= \ true - оба четные
     (AND)
     ;
@@ -219,7 +225,7 @@ WARNING ON
 
 : XCHG ( <"Rd Rr"> --) \ обменять содержимое регистров за 3 такта
     DOAFTER> ( Rd Rr --)
-    2DUP (SWAP) 2DUP (SWAP) eor eor eor
+    2DUP (SWAP) 2DUP (SWAP) EOR EOR EOR
     ;
 RESTORE-VOCS        
 

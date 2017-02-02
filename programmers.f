@@ -54,21 +54,21 @@ DUP IS PreProg IS PostProg
     THEN
     ; 
 
-     
+
 
 #def {QUIT}  .( Прошу пана:) CR  EndedLoop THROW
 
 : chip: ( ) \ войти в режим программирования, но не программировать
-    ['] {Quit} IS PreProg
+    ['] {QUIT} IS PreProg
     chip!  
     ;
 
 : chip!: ( ) \  запрограммировать и остаться  в чипе
-    ['] {Quit} IS PostProg
+    ['] {QUIT} IS PostProg
     chip!
     ;
 
-\eof
+\EOF
 \ ======== интерактивная работа с чипом до записи =========================
 \ срабатывает 1 раз на первом подходящем чипе
  chip:  \ ключевое слово

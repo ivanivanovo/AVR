@@ -95,8 +95,8 @@ CREATE BIT-SEG RAM-SEG HERE 6 CELLS DUP ALLOT MOVE S" BIT-SEG" str!
 : FUSE[  SAVE-SEGMENT FUSE  <FUSE ; : ]FUSE  FUSE> RESTORE-SEGMENT ;
 : LOCK[  SAVE-SEGMENT LOCK  <LOCK ; : ]LOCK  LOCK> RESTORE-SEGMENT ;
 
-FUSE[ SEG @ SEG-SIZE @ TRUE FILL ]FUSE  \ заполнить сегмент единицами
-LOCK[ SEG @ SEG-SIZE @ TRUE FILL ]LOCK  \ заполнить сегмент единицами
+FUSE[ SEG @ seg-size @ TRUE FILL ]FUSE  \ заполнить сегмент единицами
+LOCK[ SEG @ seg-size @ TRUE FILL ]LOCK  \ заполнить сегмент единицами
 
 ROM \ проинициализируем  
 
@@ -176,12 +176,12 @@ VARIABLE last-label
     ;
 
 : label: ( type "name" --) finger !label: ;
-0 constant CodeType
-1 constant DataType
-2 constant RegType
-3 constant PortType
-4 constant BitType
-5 constant MarkType \ внутренняя метка
+0 CONSTANT CodeType
+1 CONSTANT DataType
+2 CONSTANT RegType
+3 CONSTANT PortType
+4 CONSTANT BitType
+5 CONSTANT MarkType \ внутренняя метка
 
 : data: ( "name" --) DataType label: ;
 : TypeName ( type -- adr u)
@@ -193,7 +193,7 @@ VARIABLE last-label
             MarkType = IF      S" mark "
                 THEN THEN THEN THEN THEN THEN  
     ;
-: label-Show ( label -- n t| adr u f) \ показать содержимое объекта метки
+: label-show ( label -- n t| adr u f) \ показать содержимое объекта метки
     DUP label-type @ 
     DUP  CodeType = 
     OVER DataType = OR
@@ -201,9 +201,9 @@ VARIABLE last-label
         IF NIP TypeName FALSE EXIT THEN
     DUP  RegType  =
     OVER PortType = OR
-        IF TypeName TYPE label-value  @ -fREG SEG @  + C@ TRUE   EXIT THEN
+        IF TypeName TYPE label-value  @ -fReg SEG @  + C@ TRUE   EXIT THEN
     DUP  BitType  =
-        IF TypeName TYPE label-value @ -fREG 8 /MOD SEG @   + C@ 1 ROT LSHIFT AND 0<> 1 and ( IF 1 ELSE 0 THEN) TRUE EXIT THEN
+        IF TypeName TYPE label-value @ -fReg 8 /MOD SEG @   + C@ 1 ROT LSHIFT AND 0<> 1 AND ( IF 1 ELSE 0 THEN) TRUE EXIT THEN
     DROP S" ???  " FALSE
     ;
 : take ( n <name>--) \ зарезервировать n байт под именем name
@@ -223,11 +223,11 @@ VARIABLE last-label
     labels 
     BEGIN @ DUP WHILE
         DUP label-type @ MarkType <> 
-        IF  DUP label-value @ -fREG 5 .R  2 SPACES
+        IF  DUP label-value @ -fReg 5 .R  2 SPACES
             DUP label-name COUNT 2DUP SYMBOLS >R TYPE 10 R> - SPACES 
             DUP label-show ." =" IF 3 .R 2 SPACES ELSE DUP -ROT TYPE 10 SWAP - SPACES THEN 
             DUP label-count @ 3 .R  CR
-        then
+        THEN
     REPEAT DROP
     ;
 : labels-maps ( -- ) \ вывод меток во всех сегментах

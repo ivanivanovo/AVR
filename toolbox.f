@@ -15,6 +15,12 @@ DECIMAL
     : /STRING ( adr u n -- adr' u')
         ROT OVER + -ROT - ; 
 [THEN]
+[WITHOUT?] OFF 
+: OFF ( adr -- ) \ выключить переменную
+    FALSE SWAP ! ; 
+: ON  ( adr -- ) \ включить переменную   
+    TRUE  SWAP ! ; 
+[THEN]
 
 \ ------------------------------------------------------------------------------
 \ Последовательность вида ( Un Un-1...U1 n ) в математике называется n-мерным 
@@ -253,12 +259,6 @@ HEX[
     REPEAT
     ;
  
-[WITHOUT?] OFF 
-: OFF ( adr -- ) \ выключить переменную
-    FALSE SWAP ! ; 
-: ON  ( adr -- ) \ включить переменную   
-    TRUE  SWAP ! ; 
-[THEN]
 : EMIT_ASCII ( n -- ) \ напечатать n как символ ASCII
     DUP BL < IF DROP ." ."
              ELSE DUP 127 < 

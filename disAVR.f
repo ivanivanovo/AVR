@@ -89,7 +89,7 @@ PozLabel SizeAreaLabel + VALUE PozMnemo
 : TypeVal ( val -- ) \ напечатать смещение
     AddrOpcode? 
     IF  PozVal GoPoz   
-        WordLabelValue if 2/ then \ смещение в байтах или в словах
+        WordLabelValue IF 2/ THEN \ смещение в байтах или в словах
         SizeAreaVAL HEX[ .0R ]HEX SPACE 
         SizeAreaVAL 1+ PozStr +! 
     ELSE DROP THEN
@@ -170,7 +170,7 @@ PozLabel SizeAreaLabel + VALUE PozMnemo
             \ выполнить операнды с проверкой
             OVER   1 OperandToken ( adr'  xtop )  CATCH  >R                     
             запятая ON     \ после первого операнда запятую уже можно ставить
-            OVER   2 OperandToken   CATCH    R> or                         
+            OVER   2 OperandToken   CATCH    R> OR                         
             ( adr' adr-link' adr" flag )
         WHILE DROP S>DROP \ cr ." оборот" cr
         REPEAT NIP NIP
@@ -180,7 +180,7 @@ PozLabel SizeAreaLabel + VALUE PozMnemo
     DIS! \ режим дизассемблирования
     OVER + SWAP
     ?DO (  )
-        I DUP label-find ?DUP IF SetCurLabel then 
+        I DUP label-find ?DUP IF SetCurLabel THEN 
         DUP TypeVal \ напечатать адрес-смещение, если нужен
         SEG @ + \ текщий адрес ( adr0 ) 
         DUP @ TypeOpcode \ напечатать опкод, если нужен
@@ -199,6 +199,7 @@ PozLabel SizeAreaLabel + VALUE PozMnemo
     ;
 : (dis) ( val u -- ) \ дизассемблировать область памяти  
     CurLabelType CodeType = 
+    CurLabelType MarkType = OR
     IF AsCode ELSE AsTable THEN
     ;
 \ ======== ГЛАВНЫЕ СЛОВА =======================================================
@@ -219,19 +220,19 @@ PozLabel SizeAreaLabel + VALUE PozMnemo
     (dis) 
     ; 
 
-: Val? ( val -- ) \ показать определение
+: val? ( val -- ) \ показать определение
     ROM[
         Val_ DROP
         CR \ после участка кода идёт пустая строка, как визуальный разделитель
     ]ROM
     ;
-: Vectors? ( -- ) \ распечатать поле векторов прерываний
-    ROM[ 0 Val? ]ROM
+: vectors? ( -- ) \ распечатать поле векторов прерываний
+    ROM[ 0 val? ]ROM
     ;
 \ : WATH? ( <name> -- ) \ опознать name и распечатать
 \     \ искать имя во всех сегментах
 \     name>label ?DUP
-\     IF  label-value @ Val?
+\     IF  label-value @ val?
 \     ELSE ." Нет такой метки в " ?seg ." ."
 \     THEN
 \     ;
@@ -253,15 +254,15 @@ PozLabel SizeAreaLabel + VALUE PozMnemo
         0 TO PozLabel SizeAreaLabel TO PozMnemo
         ROT val?
     TO PozMnemo TO PozLabel
-    TRUE To AddrOpcode?
+    TRUE TO AddrOpcode?
     ;
 : seeAll ( -- ) \ показать ассемблер программы
     FALSE TO AddrOpcode?
     PozLabel PozMnemo
         0 TO PozLabel SizeAreaLabel TO PozMnemo
-        listing
+        LISTING
     TO PozMnemo TO PozLabel
-    TRUE To AddrOpcode?
+    TRUE TO AddrOpcode?
     ;
 \ ======== ТЕСТЫ И ПРИМЕРЫ =====================================================
 

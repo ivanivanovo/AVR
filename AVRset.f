@@ -118,13 +118,13 @@ HEX[
     ASM>  TRUE XOR 255 AND pac ;
 : X   ( --) S" X"     
     DIS> ,?  +>S 
-    ASM> refind-op ?DUP IF operator ! ELSE 26 +fREG THEN ;
+    ASM> refind-op ?DUP IF operator ! ELSE 26 +fReg THEN ;
 : Y   ( --) S" Y"
     DIS> ,?  +>S 
-    ASM> refind-op ?DUP IF operator ! ELSE 28 +fREG THEN ;
+    ASM> refind-op ?DUP IF operator ! ELSE 28 +fReg THEN ;
 : Z   ( --) S" Z" 
     DIS> ,?  +>S 
-    ASM> refind-op ?DUP IF operator ! ELSE 30 +fREG THEN ;
+    ASM> refind-op ?DUP IF operator ! ELSE 30 +fReg THEN ;
 
 : X+  ( --) S" X+" -XYZ+ ; 
 : -X  ( --) S" -X" -XYZ+ ; 

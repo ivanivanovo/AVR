@@ -124,7 +124,6 @@ HEX[
 0006 PORT: ADCSRA    
 0005 PORT: ADCH    
 0004 PORT: ADCL 
-0004 PORT: ADC 
 0003 PORT: ADCSRB   
 0001 PORT: DIDR0
 0000 PORT: PRR
@@ -434,7 +433,7 @@ HEX[
        6 #BitIs PUD     \ Pull-up Disable
        \ liter A only
        2 #BitIs BODSE   \ BOD Sleep Enable
-       7 #BitIS BODS    \ BOD Sleep
+       7 #BitIs BODS    \ BOD Sleep
 
     BitsIn MCUSR \ MCU Status register
        0 #BitIs PORF    \ Power-On Reset Flag
