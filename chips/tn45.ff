@@ -104,7 +104,7 @@ HEX[
 0021 PORT: WDTCR
 0021 PORT: WDTCSR
 0020 PORT: PRR
-001F PORT: EEARH
+\ 001F PORT: EEARH
 001E PORT: EEARL
 001D PORT: EEDR
 001C PORT: EECR
@@ -270,8 +270,8 @@ HEX[
        6 #BitIs EEAR6   \ EEPROM Read/Write Access Bit 6
        7 #BitIs EEAR7   \ EEPROM Read/Write Access Bit 7
 
-    BitsIn EEARH \ EEPROM Address Register High Byte
-       0 #BitIs EEAR8   \ EEPROM Read/Write Access Bit 0
+\    BitsIn EEARH \ EEPROM Address Register High Byte
+\       0 #BitIs EEAR8   \ EEPROM Read/Write Access Bit 0
 
     BitsIn EECR \ EEPROM Control Register
        0 #BitIs EERE    \ EEPROM Read Enable
