@@ -54,12 +54,14 @@ code Flash2RAM ( Z=AddrFlash Y=AddrRam r=n --)
     for lpm r0,Z+ st Y+,r0 next r
     ret c;
 
-code KillDog    \ отключить собаку
-    wdr cli \ обязательно, иначе иногда может не сработать
-    ldi r,{b WDCE WDE } out WDTCR,r
-    out WDTCR,(0)
-    ret c;
-
+[NOT?] KillDog
+[IF]
+    code KillDog    \ отключить собаку
+        wdr cli \ обязательно, иначе иногда может не сработать
+        ldi r,{b WDCE WDE } out WDTCR,r
+        out WDTCR,(0)
+        ret c;
+[THEN]
 code prgWad> (  -- ) \ пыж прогамматора
         ldi r,4 ldiW Y,outBoot rcall WtakeBuf
         if_t ret then

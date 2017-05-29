@@ -1,0 +1,1315 @@
+
+\ Minimum Wait Delay before Writing the Next Flash or EEPROM Location (ms)
+5 CONSTANT TwdFlash
+4 CONSTANT TwdEEPROM
+9 CONSTANT TwdErase
+5 CONSTANT TwdFuse
+
+\  ***** LOCKBIT *****************
+\  LOCKBIT \ 
+\ default #   TYPE    name
+    1     0   LOCK:    LB1
+    1     1   LOCK:    LB2
+
+\  ***** FUSE *****************
+\ default #   TYPE    name
+\  LOW \ 
+    0     0   FUSE:   CKSEL0      \  Select Clock Source
+    1     1   FUSE:   CKSEL1      \  Select Clock Source
+    0     2   FUSE:   CKSEL2      \  Select Clock Source
+    0     3   FUSE:   CKSEL3      \  Select Clock Source
+    0     4   FUSE:   SUT         \  Select Clock Source
+    1     5   FUSE:   noFuse      \  
+    1     6   FUSE:   CKOUT       \  Clock output on PORTC2
+    0     7   FUSE:   CKDIV8      \  Divide clock by 8 internally
+\  HIGH \ 
+    1     8   FUSE:   BODLEVEL0   \  Brown-out Detector trigger level
+    1     9   FUSE:   BODLEVEL1   \  Brown-out Detector trigger level
+    1    10   FUSE:   BODLEVEL2   \  Brown-out Detector trigger level
+    1    11   FUSE:   EESAVE      \  Preserve EEPROM through the Chip Erase cycle
+    1    12   FUSE:   WDTON       \  Watch-dog Timer always on
+    0    13   FUSE:   SPIEN       \  Serial program downloading (SPI) enabled
+    1    14   FUSE:   DWEN        \  Debug Wire enable
+    1    15   FUSE:   RSTDISBL    \  Reset Disabled (Enable PC2 as i/o pin)
+\  EXTENDED \ 
+    1    16   FUSE:   SELFPRGEN   \  Self Programming enable
+    1    17   FUSE:   BODACT0     \  BOD mode of operation when the device is active or idle
+    1    18   FUSE:   BODACT1     \  BOD mode of operation when the device is active or idle
+    1    19   FUSE:   BODPD0      \  BOD mode of operation when the device is in sleep mode
+    1    20   FUSE:   BODPD1      \  BOD mode of operation when the device is in sleep mode
+    1    21   FUSE:   ULPOSCSEL0  \  Frequency selection for internal ULP oscillator. The selection only affects system clock, watchdog and reset timeout always use 32 kHz clock.
+    1    22   FUSE:   ULPOSCSEL1  \  Frequency selection for internal ULP oscillator. The selection only affects system clock, watchdog and reset timeout always use 32 kHz clock.
+    1    23   FUSE:   ULPOSCSEL2  \  Frequency selection for internal ULP oscillator. The selection only affects system clock, watchdog and reset timeout always use 32 kHz clock.
+
+
+
+
+
+\  ***** INTERRUPT VECTORS ************************************************
+0x0001 2* CONSTANT   INT0addr              \  External Interrupt Request 0
+0x0002 2* CONSTANT   PCINT0addr            \  Pin Change Interrupt Request 0
+0x0003 2* CONSTANT   PCINT1addr            \  Pin Change Interrupt Request 1
+0x0004 2* CONSTANT   WDTaddr               \  Watchdog Time-out Interrupt
+0x0005 2* CONSTANT   TIMER1_CAPTaddr       \  Timer/Counter1 Capture Event
+0x0006 2* CONSTANT   TIMER1_COMPAaddr      \  Timer/Counter1 Compare Match A
+0x0007 2* CONSTANT   TIMER1_COMPBaddr      \  Timer/Counter1 Compare Match B
+0x0008 2* CONSTANT   TIMER1_OVFaddr        \  Timer/Counter1 Overflow
+0x0009 2* CONSTANT   TIMER0_COMPAaddr      \  TimerCounter0 Compare Match A
+0x000A 2* CONSTANT   TIMER0_COMPBaddr      \  TimerCounter0 Compare Match B
+0x000B 2* CONSTANT   TIMER0_OVFaddr        \  Timer/Couner0 Overflow
+0x000C 2* CONSTANT   ANA_COMP0addr         \  Analog Comparator 0
+0x000D 2* CONSTANT   ADCaddr               \  ADC Conversion Complete
+0x000E 2* CONSTANT   EE_RDYaddr            \  EEPROM Ready
+0x000F 2* CONSTANT   ANA_COMP1addr         \  Analog Comparator 1
+0x0010 2* CONSTANT   TIMER2_CAPTaddr       \  Timer/Counter2 Capture Event
+0x0011 2* CONSTANT   TIMER2_COMPAaddr      \  Timer/Counter2 Compare Match A
+0x0012 2* CONSTANT   TIMER2_COMPBaddr      \  Timer/Counter2 Compare Match B
+0x0013 2* CONSTANT   TIMER2_OVFaddr        \  Timer/Counter2 Overflow
+0x0014 2* CONSTANT   SPIaddr               \  Serial Peripheral Interface
+0x0015 2* CONSTANT   USART0_STARTaddr      \  USART0, Start
+0x0016 2* CONSTANT   USART0_RXaddr         \  USART0, Rx Complete
+0x0017 2* CONSTANT   USART0_UDREaddr       \  USART0 Data Register Empty
+0x0018 2* CONSTANT   USART0_TXaddr         \  USART0, Tx Complete
+0x0019 2* CONSTANT   USART1_STARTaddr      \  USART1, Start
+0x001A 2* CONSTANT   USART1_RXaddr         \  USART1, Rx Complete
+0x001B 2* CONSTANT   USART1_UDREaddr       \  USART1 Data Register Empty
+0x001C 2* CONSTANT   USART1_TXaddr         \  USART1, Tx Complete
+0x001D 2* CONSTANT   TWI_SLAVEaddr         \  Two-wire Serial Interface
+30     2* CONSTANT   INT_VECTORS_SIZE      \  size in bytes
+0x001C 2* CONSTANT   ROM_FREE      \ Стартовый адрес кода    
+\  ***** I/O REGISTER DEFINITIONS *****************************************
+\  NOTE:
+\  Definitions marked "MEMORY MAPPED" are extended I/O ports
+\  and cannot be used with IN/OUT instructions
+0xC9 CONSTANT  TCCR2B        \  MEMORY MAPPED
+0xCA CONSTANT  TCCR2A        \  MEMORY MAPPED
+0xC8 CONSTANT  TCCR2C        \  MEMORY MAPPED
+0xC7 CONSTANT  TCNT2H        \  MEMORY MAPPED
+0xC6 CONSTANT  TCNT2L        \  MEMORY MAPPED
+0xC5 CONSTANT  OCR2AH        \  MEMORY MAPPED
+0xC4 CONSTANT  OCR2AL        \  MEMORY MAPPED
+0xC3 CONSTANT  OCR2BH        \  MEMORY MAPPED
+0xC2 CONSTANT  OCR2BL        \  MEMORY MAPPED
+0xC1 CONSTANT  ICR2H         \  MEMORY MAPPED
+0xC0 CONSTANT  ICR2L         \  MEMORY MAPPED
+0xB2 CONSTANT  SPCR          \  MEMORY MAPPED
+0xB1 CONSTANT  SPSR          \  MEMORY MAPPED
+0xB0 CONSTANT  SPDR          \  MEMORY MAPPED
+0xA5 CONSTANT  TWSCRA        \  MEMORY MAPPED
+0xA4 CONSTANT  TWSCRB        \  MEMORY MAPPED
+0xA3 CONSTANT  TWSSRA        \  MEMORY MAPPED
+0xA2 CONSTANT  TWSA          \  MEMORY MAPPED
+0xA1 CONSTANT  TWSAM         \  MEMORY MAPPED
+0xA0 CONSTANT  TWSD          \  MEMORY MAPPED
+0x96 CONSTANT  UCSR1A        \  MEMORY MAPPED
+0x95 CONSTANT  UCSR1B        \  MEMORY MAPPED
+0x94 CONSTANT  UCSR1C        \  MEMORY MAPPED
+0x93 CONSTANT  UCSR1D        \  MEMORY MAPPED
+0x92 CONSTANT  UBRR1H        \  MEMORY MAPPED
+0x91 CONSTANT  UBRR1L        \  MEMORY MAPPED
+0x90 CONSTANT  UDR1          \  MEMORY MAPPED
+0x86 CONSTANT  UCSR0A        \  MEMORY MAPPED
+0x85 CONSTANT  UCSR0B        \  MEMORY MAPPED
+0x84 CONSTANT  UCSR0C        \  MEMORY MAPPED
+0x83 CONSTANT  UCSR0D        \  MEMORY MAPPED
+0x82 CONSTANT  UBRR0H        \  MEMORY MAPPED
+0x81 CONSTANT  UBRR0L        \  MEMORY MAPPED
+0x80 CONSTANT  UDR0          \  MEMORY MAPPED
+0x77 CONSTANT  OSCCAL1       \  MEMORY MAPPED
+0x76 CONSTANT  OSCTCAL0B     \  MEMORY MAPPED
+0x75 CONSTANT  OSCTCAL0A     \  MEMORY MAPPED
+0x74 CONSTANT  OSCCAL0       \  MEMORY MAPPED
+0x73 CONSTANT  CLKPR         \  MEMORY MAPPED
+0x72 CONSTANT  CLKCR         \  MEMORY MAPPED
+0x71 CONSTANT  CCP           \  MEMORY MAPPED
+0x70 CONSTANT  PRR           \  MEMORY MAPPED
+0x6A CONSTANT  PHDE          \  MEMORY MAPPED
+0x68 CONSTANT  TOCPMSA1      \  MEMORY MAPPED
+0x67 CONSTANT  TOCPMSA0      \  MEMORY MAPPED
+0x66 CONSTANT  TOCPMCOE      \  MEMORY MAPPED
+0x65 CONSTANT  REMAP         \  MEMORY MAPPED
+0x64 CONSTANT  PORTCR        \  MEMORY MAPPED
+0x63 CONSTANT  PUEA          \  MEMORY MAPPED
+0x62 CONSTANT  PUEB          \  MEMORY MAPPED
+0x61 CONSTANT  DIDR1         \  MEMORY MAPPED
+0x60 CONSTANT  DIDR0         \  MEMORY MAPPED
+0x3F CONSTANT  SREG          \  
+0x3E CONSTANT  SPH           \  
+0x3D CONSTANT  SPL           \  
+0x3C CONSTANT  OCR0B         \  
+0x3B CONSTANT  GIMSK         \  
+0x3A CONSTANT  GIFR          \  
+0x39 CONSTANT  TIMSK0        \  
+0x38 CONSTANT  TIFR0         \  
+0x37 CONSTANT  SPMCSR        \  
+0x36 CONSTANT  OCR0A         \  
+0x35 CONSTANT  MCUCR         \  
+0x34 CONSTANT  MCUSR         \  
+0x33 CONSTANT  TCCR0B        \  
+0x32 CONSTANT  TCNT0         \  
+0x30 CONSTANT  TCCR0A        \  
+0x2F CONSTANT  TCCR1A        \  
+0x2E CONSTANT  TCCR1B        \  
+0x2D CONSTANT  TCNT1H        \  
+0x2C CONSTANT  TCNT1L        \  
+0x2B CONSTANT  OCR1AH        \  
+0x2A CONSTANT  OCR1AL        \  
+0x29 CONSTANT  OCR1BH        \  
+0x28 CONSTANT  OCR1BL        \  
+0x25 CONSTANT  ICR1H         \  
+0x24 CONSTANT  ICR1L         \  
+0x23 CONSTANT  GTCCR         \  
+0x22 CONSTANT  TCCR1C        \  
+0x21 CONSTANT  WDTCSR        \  
+0x20 CONSTANT  PCMSK1        \  
+0x1F CONSTANT  EEARH         \  
+0x1E CONSTANT  EEARL         \  
+0x1D CONSTANT  EEDR          \  
+0x1C CONSTANT  EECR          \  
+0x1B CONSTANT  PORTA         \  
+0x1A CONSTANT  DDRA          \  
+0x19 CONSTANT  PINA          \  
+0x18 CONSTANT  PORTB         \  
+0x17 CONSTANT  DDRB          \  
+0x16 CONSTANT  PINB          \  
+0x15 CONSTANT  GPIOR2        \  
+0x14 CONSTANT  GPIOR1        \  
+0x13 CONSTANT  GPIOR0        \  
+0x12 CONSTANT  PCMSK0        \  
+0x11 CONSTANT  TIMSK2        \  
+0x10 CONSTANT  TIFR2         \  
+0x0F CONSTANT  TIMSK1        \  
+0x0E CONSTANT  TIFR1         \  
+0x0D CONSTANT  ACSR1B        \  
+0x0C CONSTANT  ACSR1A        \  
+0x0B CONSTANT  ACSR0B        \  
+0x0A CONSTANT  ACSR0A        \  
+0x09 CONSTANT  ADMUXA        \  
+0x08 CONSTANT  ADMUXB        \  
+0x07 CONSTANT  ADCH          \  
+0x06 CONSTANT  ADCL          \  
+0x05 CONSTANT  ADCSRA        \  
+0x04 CONSTANT  ADCSRB        \  
+
+
+\  ***** BIT DEFINITIONS **************************************************
+
+\  ***** PORTB *****************
+BitsIn  PORTCR \ Port Control Register
+1  #BitIs    BBMB             \  Break-Before-Make Mode Enable
+
+BitsIn  PUEB \ Pull-up Enable Control Register
+ 0 #BitIs    PUEB0            \  Pull-up Enable Control Register Bit 0
+ 1 #BitIs    PUEB1            \  Pull-up Enable Control Register Bit 1
+ 2 #BitIs    PUEB2            \  Pull-up Enable Control Register Bit 2
+ 3 #BitIs    PUEB3            \  Pull-up Enable Control Register Bit 3
+
+BitsIn  DDRB \ Data Direction Register, Port B
+ 0 #BitIs    DDRB0            \  Data Direction Register, Port B Bit 0
+ 1 #BitIs    DDRB1            \  Data Direction Register, Port B Bit 1
+ 2 #BitIs    DDRB2            \  Data Direction Register, Port B Bit 2
+ 3 #BitIs    DDRB3            \  Data Direction Register, Port B Bit 3
+
+BitsIn  PINB \ Port B Data register
+ 0 #BitIs    PINB0            \  Port B Data register Bit 0
+ 1 #BitIs    PINB1            \  Port B Data register Bit 1
+ 2 #BitIs    PINB2            \  Port B Data register Bit 2
+ 3 #BitIs    PINB3            \  Port B Data register Bit 3
+
+BitsIn  PORTB \ Input Pins, Port B
+ 0 #BitIs    PORTB0           \  Input Pins, Port B Bit 0
+ 1 #BitIs    PORTB1           \  Input Pins, Port B Bit 1
+ 2 #BitIs    PORTB2           \  Input Pins, Port B Bit 2
+ 3 #BitIs    PORTB3           \  Input Pins, Port B Bit 3
+
+
+\  ***** USART1 *****************
+BitsIn  UDR1 \ USART I/O Data Register
+ 0 #BitIs    UDR10            \  USART I/O Data Register Bit 0
+ 1 #BitIs    UDR11            \  USART I/O Data Register Bit 1
+ 2 #BitIs    UDR12            \  USART I/O Data Register Bit 2
+ 3 #BitIs    UDR13            \  USART I/O Data Register Bit 3
+ 4 #BitIs    UDR14            \  USART I/O Data Register Bit 4
+ 5 #BitIs    UDR15            \  USART I/O Data Register Bit 5
+ 6 #BitIs    UDR16            \  USART I/O Data Register Bit 6
+ 7 #BitIs    UDR17            \  USART I/O Data Register Bit 7
+
+BitsIn  UCSR1A \ USART Control and Status Register A
+ 0 #BitIs    MPCM1            \  Multi-processor Communication Mode
+ 1 #BitIs    U2X1             \  Double the USART transmission speed
+ 2 #BitIs    UPE1             \  Parity Error
+ 3 #BitIs    DOR1             \  Data overRun
+ 4 #BitIs    FE1              \  Framing Error
+ 5 #BitIs    UDRE1            \  USART Data Register Empty
+ 6 #BitIs    TXC1             \  USART Transmitt Complete
+ 7 #BitIs    RXC1             \  USART Receive Complete
+
+BitsIn  UCSR1B \ USART Control and Status Register B
+ 0 #BitIs    TXB81            \  Transmit Data Bit 8
+ 1 #BitIs    RXB81            \  Receive Data Bit 8
+ 2 #BitIs    UCSZ12           \  Character Size
+ 3 #BitIs    TXEN1            \  Transmitter Enable
+ 4 #BitIs    RXEN1            \  Receiver Enable
+ 5 #BitIs    UDRIE1           \  USART Data register Empty Interrupt Enable
+ 6 #BitIs    TXCIE1           \  TX Complete Interrupt Enable
+ 7 #BitIs    RXCIE1           \  RX Complete Interrupt Enable
+
+BitsIn  UCSR1C \ USART Control and Status Register C
+ 0 #BitIs    UCPOL1           \  Clock Polarity
+ 1 #BitIs    UCSZ10           \  Character Size
+ 2 #BitIs    UCSZ11           \  Character Size
+ 3 #BitIs    USBS1            \  Stop Bit Select
+ 4 #BitIs    UPM10            \  Parity Mode Bits
+ 5 #BitIs    UPM11            \  Parity Mode Bits
+ 6 #BitIs    UMSEL10          \  USART Mode Select
+ 7 #BitIs    UMSEL11          \  USART Mode Select
+
+BitsIn  UCSR1D \ USART Control and Status Register D
+ 5 #BitIs    SFDE1            \  USART RX Start Frame Detection Enable
+ 6 #BitIs    RXS1             \  USART RX Start Flag
+ 7 #BitIs    RXSIE1           \  USART RX Start Interrupt Enable
+
+BitsIn  UBRR1H \ USART Baud Rate Register  Bytes
+ 0 #BitIs    UBRR1H0          \  USART Baud Rate Register  Bytes High Bit 8
+ 1 #BitIs    UBRR1H1          \  USART Baud Rate Register  Bytes High Bit 9
+ 2 #BitIs    UBRR1H2          \  USART Baud Rate Register  Bytes High Bit 10
+ 3 #BitIs    UBRR1H3          \  USART Baud Rate Register  Bytes High Bit 11
+
+BitsIn  UBRR1L \ USART Baud Rate Register  Bytes
+ 0 #BitIs    UBRR1L0          \  USART Baud Rate Register  Bytes Low Bit 0
+ 1 #BitIs    UBRR1L1          \  USART Baud Rate Register  Bytes Low Bit 1
+ 2 #BitIs    UBRR1L2          \  USART Baud Rate Register  Bytes Low Bit 2
+ 3 #BitIs    UBRR1L3          \  USART Baud Rate Register  Bytes Low Bit 3
+ 4 #BitIs    UBRR1L4          \  USART Baud Rate Register  Bytes Low Bit 4
+ 5 #BitIs    UBRR1L5          \  USART Baud Rate Register  Bytes Low Bit 5
+ 6 #BitIs    UBRR1L6          \  USART Baud Rate Register  Bytes Low Bit 6
+ 7 #BitIs    UBRR1L7          \  USART Baud Rate Register  Bytes Low Bit 7
+
+
+\  ***** WATCHDOG *****************
+BitsIn  WDTCSR \ Watchdog Timer Control and Status Register
+ 3 #BitIs    WDE              \  Watch Dog Enable
+ 0 #BitIs    WDP0             \  Watchdog Timer Prescaler Bits
+ 1 #BitIs    WDP1             \  Watchdog Timer Prescaler Bits
+ 2 #BitIs    WDP2             \  Watchdog Timer Prescaler Bits
+ 5 #BitIs    WDP3             \  Watchdog Timer Prescaler Bits
+ 6 #BitIs    WDIE             \  Watchdog Timer Interrupt Enable
+ 7 #BitIs    WDIF             \  Watchdog Timer Interrupt Flag
+
+
+\  ***** TWI *****************
+BitsIn  TWSCRA \ TWI Slave Control Register A
+ 0 #BitIs    TWSME            \  TWI Smart Mode Enable
+ 1 #BitIs    TWPME            \  TWI Promiscuous Mode Enable
+ 2 #BitIs    TWSIE            \  TWI Stop Interrupt Enable
+ 3 #BitIs    TWEN             \  Two-Wire Interface Enable
+ 4 #BitIs    TWASIE           \  TWI Address/Stop Interrupt Enable
+ 5 #BitIs    TWDIE            \  TWI Data Interrupt Enable
+ 7 #BitIs    TWSHE            \  TWI SDA Hold Time Enable
+
+BitsIn  TWSCRB \ TWI Slave Control Register B
+ 0 #BitIs    TWCMD0           \  
+ 1 #BitIs    TWCMD1           \  
+ 2 #BitIs    TWAA             \  TWI Acknowledge Action
+ 3 #BitIs    TWHNM            \  TWI High Noise Mode
+
+BitsIn  TWSSRA \ TWI Slave Status Register A
+ 0 #BitIs    TWAS             \  TWI Address or Stop
+ 1 #BitIs    TWDIR            \  TWI Read/Write Direction
+ 2 #BitIs    TWBE             \  TWI Bus Error
+ 3 #BitIs    TWC              \  TWI Collision
+ 4 #BitIs    TWRA             \  TWI Receive Acknowledge
+ 5 #BitIs    TWCH             \  TWI Clock Hold
+ 6 #BitIs    TWASIF           \  TWI Address/Stop Interrupt Flag
+ 7 #BitIs    TWDIF            \  TWI Data Interrupt Flag.
+
+BitsIn  TWSA \ TWI Slave Address Register
+ 0 #BitIs    TWSA0            \  TWI Slave Address Register Bit 0
+ 1 #BitIs    TWSA1            \  TWI Slave Address Register Bit 1
+ 2 #BitIs    TWSA2            \  TWI Slave Address Register Bit 2
+ 3 #BitIs    TWSA3            \  TWI Slave Address Register Bit 3
+ 4 #BitIs    TWSA4            \  TWI Slave Address Register Bit 4
+ 5 #BitIs    TWSA5            \  TWI Slave Address Register Bit 5
+ 6 #BitIs    TWSA6            \  TWI Slave Address Register Bit 6
+ 7 #BitIs    TWSA7            \  TWI Slave Address Register Bit 7
+
+BitsIn  TWSD \ TWI Slave Data Register
+ 0 #BitIs    TWSD0            \  TWI slave data bit
+ 1 #BitIs    TWSD1            \  TWI slave data bit
+ 2 #BitIs    TWSD2            \  TWI slave data bit
+ 3 #BitIs    TWSD3            \  TWI slave data bit
+ 4 #BitIs    TWSD4            \  TWI slave data bit
+ 5 #BitIs    TWSD5            \  TWI slave data bit
+ 6 #BitIs    TWSD6            \  TWI slave data bit
+ 7 #BitIs    TWSD7            \  TWI slave data bit
+
+BitsIn  TWSAM \ TWI Slave Address Mask Register
+ 0 #BitIs    TWAE             \  TWI Address Enable
+ 1 #BitIs    TWSAM1           \  TWI Address Mask Bits
+ 2 #BitIs    TWSAM2           \  TWI Address Mask Bits
+ 3 #BitIs    TWSAM3           \  TWI Address Mask Bits
+ 4 #BitIs    TWSAM4           \  TWI Address Mask Bits
+ 5 #BitIs    TWSAM5           \  TWI Address Mask Bits
+ 6 #BitIs    TWSAM6           \  TWI Address Mask Bits
+ 7 #BitIs    TWSAM7           \  TWI Address Mask Bits
+
+
+\  ***** AD_CONVERTER *****************
+BitsIn   ADMUXA \ The ADC multiplexer Selection Register A
+ 0 #BitIs    MUX0             \  Analog Channel and Gain Selection Bits
+ 1 #BitIs    MUX1             \  Analog Channel and Gain Selection Bits
+ 2 #BitIs    MUX2             \  Analog Channel and Gain Selection Bits
+ 3 #BitIs    MUX3             \  Analog Channel and Gain Selection Bits
+ 4 #BitIs    MUX4             \  Analog Channel and Gain Selection Bits
+ 5 #BitIs    MUX5             \  Analog Channel and Gain Selection Bits
+
+BitsIn   ADMUXB \ The ADC multiplexer Selection Register B
+ 0 #BitIs    GSEL0            \  Gain Selection Bits
+ 1 #BitIs    GSEL1            \  Gain Selection Bits
+ 5 #BitIs    REFS0            \  Reference Selection Bits
+ 6 #BitIs    REFS1            \  Reference Selection Bits
+ 7 #BitIs    REFS2            \  Reference Selection Bits
+
+BitsIn   ADCSRA \ The ADC Control and Status register
+ 0 #BitIs    ADPS0            \  ADC Prescaler Select Bits
+ 1 #BitIs    ADPS1            \  ADC Prescaler Select Bits
+ 2 #BitIs    ADPS2            \  ADC Prescaler Select Bits
+ 3 #BitIs    ADIE             \  ADC Interrupt Enable
+ 4 #BitIs    ADIF             \  ADC Interrupt Flag
+ 5 #BitIs    ADATE            \  ADC Auto Trigger Enable
+ 6 #BitIs    ADSC             \  ADC Start Conversion
+ 7 #BitIs    ADEN             \  ADC Enable
+
+BitsIn   ADCH \ ADC Data Register  Bytes
+ 0 #BitIs    ADCH0            \  ADC Data Register  Bytes High Bit 8
+ 1 #BitIs    ADCH1            \  ADC Data Register  Bytes High Bit 9
+ 2 #BitIs    ADCH2            \  ADC Data Register  Bytes High Bit 10
+ 3 #BitIs    ADCH3            \  ADC Data Register  Bytes High Bit 11
+ 4 #BitIs    ADCH4            \  ADC Data Register  Bytes High Bit 12
+ 5 #BitIs    ADCH5            \  ADC Data Register  Bytes High Bit 13
+ 6 #BitIs    ADCH6            \  ADC Data Register  Bytes High Bit 14
+ 7 #BitIs    ADCH7            \  ADC Data Register  Bytes High Bit 15
+
+BitsIn   ADCL \ ADC Data Register  Bytes
+ 0 #BitIs    ADCL0            \  ADC Data Register  Bytes Low Bit 0
+ 1 #BitIs    ADCL1            \  ADC Data Register  Bytes Low Bit 1
+ 2 #BitIs    ADCL2            \  ADC Data Register  Bytes Low Bit 2
+ 3 #BitIs    ADCL3            \  ADC Data Register  Bytes Low Bit 3
+ 4 #BitIs    ADCL4            \  ADC Data Register  Bytes Low Bit 4
+ 5 #BitIs    ADCL5            \  ADC Data Register  Bytes Low Bit 5
+ 6 #BitIs    ADCL6            \  ADC Data Register  Bytes Low Bit 6
+ 7 #BitIs    ADCL7            \  ADC Data Register  Bytes Low Bit 7
+
+BitsIn   ADCSRB \ ADC Control and Status Register B
+ 0 #BitIs    ADTS0            \  ADC Auto Trigger Sources
+ 1 #BitIs    ADTS1            \  ADC Auto Trigger Sources
+ 2 #BitIs    ADTS2            \  ADC Auto Trigger Sources
+ 3 #BitIs    ADLAR            \  
+
+BitsIn   DIDR1 \ Digital Input Disable Register 1
+ 0 #BitIs    ADC11D           \  ADC11 Digital input Disable
+ 1 #BitIs    ADC10D           \  ADC10 Digital input Disable
+ 2 #BitIs    ADC8D            \  ADC8 Digital input Disable
+ 3 #BitIs    ADC9D            \  ADC9 Digital Input Disable
+
+BitsIn   DIDR0 \ Digital Input Disable Register 0
+ 0 #BitIs    ADC0D            \  ADC0/AREF Digital input Disable
+ 1 #BitIs    ADC1D            \  ADC1/AIN00 Digital input Disable
+ 2 #BitIs    ADC2D            \  ADC2/AIN01 Digital input Disable
+ 3 #BitIs    ADC3D            \  ADC3/AIN10 Digital Input Disable
+ 4 #BitIs    ADC4D            \  ADC4/AIN11 Digital input Disable
+ 5 #BitIs    ADC5D            \  ADC5 Digital input Disable
+ 6 #BitIs    ADC6D            \  ADC6 Digital input Disable
+ 7 #BitIs    ADC7D            \  ADC7 Digital input Disable
+
+
+\  ***** ANALOG_COMPARATOR *****************
+BitsIn   ACSR0B \ Analog Comparator 0 Control And Status Register B
+ 0 #BitIs    ACPMUX0          \  Analog Comparator 0 Positive Input Multiplexer Bits 1:0
+ 1 #BitIs    ACPMUX1          \  Analog Comparator 0 Positive Input Multiplexer Bits 1:0
+ 2 #BitIs    ACNMUX0          \  Analog Comparator 0 Negative Input Multiplexer
+ 3 #BitIs    ACNMUX1          \  Analog Comparator 0 Negative Input Multiplexer
+ 4 #BitIs    ACOE0            \  Analog Comparator 0 Output Pin Enable
+ 6 #BitIs    HLEV0            \  Analog Comparator 0 Hysteresis Level
+ 7 #BitIs    HSEL0            \  Analog Comparator 0 Hysteresis Select
+
+BitsIn   ACSR0A \ Analog Comparator 0 Control And Status Register A
+ 0 #BitIs    ACIS00           \  Analog Comparator 0 Interrupt Mode Select bits
+ 1 #BitIs    ACIS01           \  Analog Comparator 0 Interrupt Mode Select bits
+ 2 #BitIs    ACIC0            \  Analog Comparator 0 Input Capture Enable
+ 3 #BitIs    ACIE0            \  Analog Comparator 0 Interrupt Enable
+ 4 #BitIs    ACI0             \  Analog Comparator 0 Interrupt Flag
+ 5 #BitIs    ACO0             \  Analog Comparator 0 Output
+ 6 #BitIs    ACPMUX2          \  Analog Comparator 0 Positive Input Multiplexer Bit 2
+ 7 #BitIs    ACD0             \  Analog Comparator 0 Disable
+
+BitsIn   ACSR1B \ Analog Comparator 1 Control And Status Register B
+ 2 #BitIs    ACME1            \  Analog Comparator 1 Multiplexer Enable
+ 4 #BitIs    ACOE1            \  Analog Comparator 1 Output Pin Enable
+ 6 #BitIs    HLEV1            \  Analog Comparator 1 Hysteresis Level
+ 7 #BitIs    HSEL1            \  Analog Comparator 1 Hysteresis Select
+
+BitsIn   ACSR1A \ Analog Comparator 1 Control And Status Register A
+ 0 #BitIs    ACIS10           \  Analog Comparator 1 Interrupt Mode Select bits
+ 1 #BitIs    ACIS11           \  Analog Comparator 1 Interrupt Mode Select bits
+ 2 #BitIs    ACIC1            \  Analog Comparator 1 Input Capture Enable
+ 3 #BitIs    ACIE1            \  Analog Comparator 1 Interrupt Enable
+ 4 #BitIs    ACI1             \  Analog Comparator 1 Interrupt Flag
+ 5 #BitIs    ACO1             \  Analog Comparator 1 Output
+ 6 #BitIs    ACBG1            \  Analog Comparator 1 Bandgap Select
+ 7 #BitIs    ACD1             \  Analog Comparator 1 Disable
+
+
+\  ***** EEPROM *****************
+BitsIn   EEARH \ EEPROM Address Register  Bytes
+0 #BitIs    EEARH0           \  EEPROM Address Register  Bytes High Bit 8
+
+BitsIn   EEARL \ EEPROM Address Register  Bytes
+ 0 #BitIs    EEARL0           \  EEPROM Address Register  Bytes Low Bit 0
+ 1 #BitIs    EEARL1           \  EEPROM Address Register  Bytes Low Bit 1
+ 2 #BitIs    EEARL2           \  EEPROM Address Register  Bytes Low Bit 2
+ 3 #BitIs    EEARL3           \  EEPROM Address Register  Bytes Low Bit 3
+ 4 #BitIs    EEARL4           \  EEPROM Address Register  Bytes Low Bit 4
+ 5 #BitIs    EEARL5           \  EEPROM Address Register  Bytes Low Bit 5
+ 6 #BitIs    EEARL6           \  EEPROM Address Register  Bytes Low Bit 6
+ 7 #BitIs    EEARL7           \  EEPROM Address Register  Bytes Low Bit 7
+
+BitsIn   EEDR \ EEPROM Data Register
+ 0 #BitIs    EEDR0            \  EEPROM Data Register Bit 0
+ 1 #BitIs    EEDR1            \  EEPROM Data Register Bit 1
+ 2 #BitIs    EEDR2            \  EEPROM Data Register Bit 2
+ 3 #BitIs    EEDR3            \  EEPROM Data Register Bit 3
+ 4 #BitIs    EEDR4            \  EEPROM Data Register Bit 4
+ 5 #BitIs    EEDR5            \  EEPROM Data Register Bit 5
+ 6 #BitIs    EEDR6            \  EEPROM Data Register Bit 6
+ 7 #BitIs    EEDR7            \  EEPROM Data Register Bit 7
+
+BitsIn   EECR \ EEPROM Control Register
+ 0 #BitIs    EERE             \  EEPROM Read Enable
+ 1 #BitIs    EEPE             \  EEPROM Write Enable
+ 2 #BitIs    EEMPE            \  EEPROM Master Write Enable
+ 3 #BitIs    EERIE            \  EEPROM Ready Interrupt Enable
+ 4 #BitIs    EEPM0            \  EEPROM Programming Mode Bits
+ 5 #BitIs    EEPM1            \  EEPROM Programming Mode Bits
+
+
+\  ***** TIMER_COUNTER_1 *****************
+BitsIn   TIMSK1 \ Timer/Counter1 Interrupt Mask Register
+ 0 #BitIs    TOIE1            \  Timer/Counter1 Overflow Interrupt Enable
+ 1 #BitIs    OCIE1A           \  Timer/Counter1 Output Compare A Match Interrupt Enable
+ 2 #BitIs    OCIE1B           \  Timer/Counter1 Output Compare B Match Interrupt Enable
+ 5 #BitIs    ICIE1            \  Timer/Counter1 Input Capture Interrupt Enable
+
+BitsIn   TIFR1 \ Timer/Counter Interrupt Flag register
+ 0 #BitIs    TOV1             \  Timer/Counter1 Overflow Flag
+ 1 #BitIs    OCF1A            \  Timer/Counter1 Output Compare A Match Flag
+ 2 #BitIs    OCF1B            \  Timer/Counter1 Output Compare B Match Flag
+ 5 #BitIs    ICF1             \  Timer/Counter1 Input Capture Flag
+
+BitsIn   TCCR1A \ Timer/Counter1 Control Register A
+ 0 #BitIs    WGM10            \  Pulse Width Modulator Select Bits
+ 1 #BitIs    WGM11            \  Pulse Width Modulator Select Bits
+ 4 #BitIs    COM1B0           \  Compare Output Mode 1B, bits
+ 5 #BitIs    COM1B1           \  Compare Output Mode 1B, bits
+ 6 #BitIs    COM1A0           \  Compare Output Mode 1A, bits
+ 7 #BitIs    COM1A1           \  Compare Output Mode 1A, bits
+
+BitsIn   TCCR1B \ Timer/Counter1 Control Register B
+ 0 #BitIs    CS10             \  Clock Select bits
+ 1 #BitIs    CS11             \  Clock Select bits
+ 2 #BitIs    CS12             \  Clock Select bits
+ 3 #BitIs    WGM12            \  Waveform Generation Mode Bits
+ 4 #BitIs    WGM13            \  Waveform Generation Mode Bits
+ 6 #BitIs    ICES1            \  Input Capture 1 Edge Select
+ 7 #BitIs    ICNC1            \  Input Capture 1 Noise Canceler
+
+BitsIn   TCCR1C \ Timer/Counter1 Control Register C
+ 6 #BitIs    FOC1B            \  Force Output Compare for Channel B
+ 7 #BitIs    FOC1A            \  Force Output Compare for Channel A
+
+BitsIn   TCNT1H \ Timer/Counter1  Bytes
+ 0 #BitIs    TCNT1H0          \  Timer/Counter1  Bytes High Bit 8
+ 1 #BitIs    TCNT1H1          \  Timer/Counter1  Bytes High Bit 9
+ 2 #BitIs    TCNT1H2          \  Timer/Counter1  Bytes High Bit 10
+ 3 #BitIs    TCNT1H3          \  Timer/Counter1  Bytes High Bit 11
+ 4 #BitIs    TCNT1H4          \  Timer/Counter1  Bytes High Bit 12
+ 5 #BitIs    TCNT1H5          \  Timer/Counter1  Bytes High Bit 13
+ 6 #BitIs    TCNT1H6          \  Timer/Counter1  Bytes High Bit 14
+ 7 #BitIs    TCNT1H7          \  Timer/Counter1  Bytes High Bit 15
+
+BitsIn   TCNT1L \ Timer/Counter1  Bytes
+ 0 #BitIs    TCNT1L0          \  Timer/Counter1  Bytes Low Bit 0
+ 1 #BitIs    TCNT1L1          \  Timer/Counter1  Bytes Low Bit 1
+ 2 #BitIs    TCNT1L2          \  Timer/Counter1  Bytes Low Bit 2
+ 3 #BitIs    TCNT1L3          \  Timer/Counter1  Bytes Low Bit 3
+ 4 #BitIs    TCNT1L4          \  Timer/Counter1  Bytes Low Bit 4
+ 5 #BitIs    TCNT1L5          \  Timer/Counter1  Bytes Low Bit 5
+ 6 #BitIs    TCNT1L6          \  Timer/Counter1  Bytes Low Bit 6
+ 7 #BitIs    TCNT1L7          \  Timer/Counter1  Bytes Low Bit 7
+
+BitsIn   OCR1AH \ Timer/Counter1 Output Compare Register A  Bytes
+ 0 #BitIs    OCR1AH0          \  Timer/Counter1 Output Compare Register A  Bytes High Bit 8
+ 1 #BitIs    OCR1AH1          \  Timer/Counter1 Output Compare Register A  Bytes High Bit 9
+ 2 #BitIs    OCR1AH2          \  Timer/Counter1 Output Compare Register A  Bytes High Bit 10
+ 3 #BitIs    OCR1AH3          \  Timer/Counter1 Output Compare Register A  Bytes High Bit 11
+ 4 #BitIs    OCR1AH4          \  Timer/Counter1 Output Compare Register A  Bytes High Bit 12
+ 5 #BitIs    OCR1AH5          \  Timer/Counter1 Output Compare Register A  Bytes High Bit 13
+ 6 #BitIs    OCR1AH6          \  Timer/Counter1 Output Compare Register A  Bytes High Bit 14
+ 7 #BitIs    OCR1AH7          \  Timer/Counter1 Output Compare Register A  Bytes High Bit 15
+
+BitsIn   OCR1AL \ Timer/Counter1 Output Compare Register A  Bytes
+ 0 #BitIs    OCR1AL0          \  Timer/Counter1 Output Compare Register A  Bytes Low Bit 0
+ 1 #BitIs    OCR1AL1          \  Timer/Counter1 Output Compare Register A  Bytes Low Bit 1
+ 2 #BitIs    OCR1AL2          \  Timer/Counter1 Output Compare Register A  Bytes Low Bit 2
+ 3 #BitIs    OCR1AL3          \  Timer/Counter1 Output Compare Register A  Bytes Low Bit 3
+ 4 #BitIs    OCR1AL4          \  Timer/Counter1 Output Compare Register A  Bytes Low Bit 4
+ 5 #BitIs    OCR1AL5          \  Timer/Counter1 Output Compare Register A  Bytes Low Bit 5
+ 6 #BitIs    OCR1AL6          \  Timer/Counter1 Output Compare Register A  Bytes Low Bit 6
+ 7 #BitIs    OCR1AL7          \  Timer/Counter1 Output Compare Register A  Bytes Low Bit 7
+
+BitsIn   OCR1BH \ Timer/Counter1 Output Compare Register B  Bytes
+ 0 #BitIs    OCR1BH0          \  Timer/Counter1 Output Compare Register B  Bytes High Bit 8
+ 1 #BitIs    OCR1BH1          \  Timer/Counter1 Output Compare Register B  Bytes High Bit 9
+ 2 #BitIs    OCR1BH2          \  Timer/Counter1 Output Compare Register B  Bytes High Bit 10
+ 3 #BitIs    OCR1BH3          \  Timer/Counter1 Output Compare Register B  Bytes High Bit 11
+ 4 #BitIs    OCR1BH4          \  Timer/Counter1 Output Compare Register B  Bytes High Bit 12
+ 5 #BitIs    OCR1BH5          \  Timer/Counter1 Output Compare Register B  Bytes High Bit 13
+ 6 #BitIs    OCR1BH6          \  Timer/Counter1 Output Compare Register B  Bytes High Bit 14
+ 7 #BitIs    OCR1BH7          \  Timer/Counter1 Output Compare Register B  Bytes High Bit 15
+
+BitsIn   OCR1BL \ Timer/Counter1 Output Compare Register B  Bytes
+ 0 #BitIs    OCR1BL0          \  Timer/Counter1 Output Compare Register B  Bytes Low Bit 0
+ 1 #BitIs    OCR1BL1          \  Timer/Counter1 Output Compare Register B  Bytes Low Bit 1
+ 2 #BitIs    OCR1BL2          \  Timer/Counter1 Output Compare Register B  Bytes Low Bit 2
+ 3 #BitIs    OCR1BL3          \  Timer/Counter1 Output Compare Register B  Bytes Low Bit 3
+ 4 #BitIs    OCR1BL4          \  Timer/Counter1 Output Compare Register B  Bytes Low Bit 4
+ 5 #BitIs    OCR1BL5          \  Timer/Counter1 Output Compare Register B  Bytes Low Bit 5
+ 6 #BitIs    OCR1BL6          \  Timer/Counter1 Output Compare Register B  Bytes Low Bit 6
+ 7 #BitIs    OCR1BL7          \  Timer/Counter1 Output Compare Register B  Bytes Low Bit 7
+
+BitsIn   ICR1H \ Timer/Counter1 Input Capture Register  Bytes
+ 0 #BitIs    ICR1H0           \  Timer/Counter1 Input Capture Register  Bytes High Bit 8
+ 1 #BitIs    ICR1H1           \  Timer/Counter1 Input Capture Register  Bytes High Bit 9
+ 2 #BitIs    ICR1H2           \  Timer/Counter1 Input Capture Register  Bytes High Bit 10
+ 3 #BitIs    ICR1H3           \  Timer/Counter1 Input Capture Register  Bytes High Bit 11
+ 4 #BitIs    ICR1H4           \  Timer/Counter1 Input Capture Register  Bytes High Bit 12
+ 5 #BitIs    ICR1H5           \  Timer/Counter1 Input Capture Register  Bytes High Bit 13
+ 6 #BitIs    ICR1H6           \  Timer/Counter1 Input Capture Register  Bytes High Bit 14
+ 7 #BitIs    ICR1H7           \  Timer/Counter1 Input Capture Register  Bytes High Bit 15
+
+BitsIn   ICR1L \ Timer/Counter1 Input Capture Register  Bytes
+ 0 #BitIs    ICR1L0           \  Timer/Counter1 Input Capture Register  Bytes Low Bit 0
+ 1 #BitIs    ICR1L1           \  Timer/Counter1 Input Capture Register  Bytes Low Bit 1
+ 2 #BitIs    ICR1L2           \  Timer/Counter1 Input Capture Register  Bytes Low Bit 2
+ 3 #BitIs    ICR1L3           \  Timer/Counter1 Input Capture Register  Bytes Low Bit 3
+ 4 #BitIs    ICR1L4           \  Timer/Counter1 Input Capture Register  Bytes Low Bit 4
+ 5 #BitIs    ICR1L5           \  Timer/Counter1 Input Capture Register  Bytes Low Bit 5
+ 6 #BitIs    ICR1L6           \  Timer/Counter1 Input Capture Register  Bytes Low Bit 6
+ 7 #BitIs    ICR1L7           \  Timer/Counter1 Input Capture Register  Bytes Low Bit 7
+
+BitsIn   GTCCR \ General Timer/Counter Control Register
+ 0 #BitIs    PSR          \  Prescaler Reset Timer/CounterN
+ 7 #BitIs    TSM          \  Timer/Counter Synchronization Mode
+
+
+\  ***** TIMER_COUNTER_2 *****************
+BitsIn   TIMSK2 \ Timer/Counter2 Interrupt Mask Register
+ 0 #BitIs    TOIE2            \  Timer/Counter2 Overflow Interrupt Enable
+ 1 #BitIs    OCIE2A           \  Timer/Counter2 Output Compare A Match Interrupt Enable
+ 2 #BitIs    OCIE2B           \  Timer/Counter2 Output Compare B Match Interrupt Enable
+ 5 #BitIs    ICIE2            \  Timer/Counter2 Input Capture Interrupt Enable
+
+BitsIn   TIFR2 \ Timer/Counter Interrupt Flag register
+ 0 #BitIs    TOV2             \  Timer/Counter2 Overflow Flag
+ 1 #BitIs    OCF2A            \  Timer/Counter2 Output Compare A Match Flag
+ 2 #BitIs    OCF2B            \  Timer/Counter2 Output Compare B Match Flag
+ 5 #BitIs    ICF2             \  Timer/Counter2 Input Capture Flag
+
+BitsIn   TCCR2A \ Timer/Counter2 Control Register A
+ 0 #BitIs    WGM20            \  Pulse Width Modulator Select Bits
+ 1 #BitIs    WGM21            \  Pulse Width Modulator Select Bits
+ 4 #BitIs    COM2B0           \  Compare Output Mode 2B, bits
+ 5 #BitIs    COM2B1           \  Compare Output Mode 2B, bits
+ 6 #BitIs    COM2A0           \  Compare Output Mode 2A, bits
+ 7 #BitIs    COM2A1           \  Compare Output Mode 2A, bits
+
+BitsIn   TCCR2B \ Timer/Counter2 Control Register B
+ 0 #BitIs    CS20             \  Clock Select bits
+ 1 #BitIs    CS21             \  Clock Select bits
+ 2 #BitIs    CS22             \  Clock Select bits
+ 3 #BitIs    WGM22            \  Waveform Generation Mode Bits
+ 4 #BitIs    WGM23            \  Waveform Generation Mode Bits
+ 6 #BitIs    ICES2            \  Input Capture 2 Edge Select
+ 7 #BitIs    ICNC2            \  Input Capture 2 Noise Canceler
+
+BitsIn   TCCR2C \ Timer/Counter2 Control Register C
+ 6 #BitIs    FOC2B            \  Force Output Compare for Channel B
+ 7 #BitIs    FOC2A            \  Force Output Compare for Channel A
+
+BitsIn   TCNT2H \ Timer/Counter2  Bytes
+ 0 #BitIs    TCNT2H0          \  Timer/Counter2  Bytes High Bit 8
+ 1 #BitIs    TCNT2H1          \  Timer/Counter2  Bytes High Bit 9
+ 2 #BitIs    TCNT2H2          \  Timer/Counter2  Bytes High Bit 10
+ 3 #BitIs    TCNT2H3          \  Timer/Counter2  Bytes High Bit 11
+ 4 #BitIs    TCNT2H4          \  Timer/Counter2  Bytes High Bit 12
+ 5 #BitIs    TCNT2H5          \  Timer/Counter2  Bytes High Bit 13
+ 6 #BitIs    TCNT2H6          \  Timer/Counter2  Bytes High Bit 14
+ 7 #BitIs    TCNT2H7          \  Timer/Counter2  Bytes High Bit 15
+
+BitsIn   TCNT2L \ Timer/Counter2  Bytes
+ 0 #BitIs    TCNT2L0          \  Timer/Counter2  Bytes Low Bit 0
+ 1 #BitIs    TCNT2L1          \  Timer/Counter2  Bytes Low Bit 1
+ 2 #BitIs    TCNT2L2          \  Timer/Counter2  Bytes Low Bit 2
+ 3 #BitIs    TCNT2L3          \  Timer/Counter2  Bytes Low Bit 3
+ 4 #BitIs    TCNT2L4          \  Timer/Counter2  Bytes Low Bit 4
+ 5 #BitIs    TCNT2L5          \  Timer/Counter2  Bytes Low Bit 5
+ 6 #BitIs    TCNT2L6          \  Timer/Counter2  Bytes Low Bit 6
+ 7 #BitIs    TCNT2L7          \  Timer/Counter2  Bytes Low Bit 7
+
+BitsIn   OCR2AH \ Timer/Counter2 Output Compare Register A  Bytes
+ 0 #BitIs    OCR2AH0          \  Timer/Counter2 Output Compare Register A  Bytes High Bit 8
+ 1 #BitIs    OCR2AH1          \  Timer/Counter2 Output Compare Register A  Bytes High Bit 9
+ 2 #BitIs    OCR2AH2          \  Timer/Counter2 Output Compare Register A  Bytes High Bit 10
+ 3 #BitIs    OCR2AH3          \  Timer/Counter2 Output Compare Register A  Bytes High Bit 11
+ 4 #BitIs    OCR2AH4          \  Timer/Counter2 Output Compare Register A  Bytes High Bit 12
+ 5 #BitIs    OCR2AH5          \  Timer/Counter2 Output Compare Register A  Bytes High Bit 13
+ 6 #BitIs    OCR2AH6          \  Timer/Counter2 Output Compare Register A  Bytes High Bit 14
+ 7 #BitIs    OCR2AH7          \  Timer/Counter2 Output Compare Register A  Bytes High Bit 15
+
+BitsIn   OCR2AL \ Timer/Counter2 Output Compare Register A  Bytes
+ 0 #BitIs    OCR2AL0          \  Timer/Counter2 Output Compare Register A  Bytes Low Bit 0
+ 1 #BitIs    OCR2AL1          \  Timer/Counter2 Output Compare Register A  Bytes Low Bit 1
+ 2 #BitIs    OCR2AL2          \  Timer/Counter2 Output Compare Register A  Bytes Low Bit 2
+ 3 #BitIs    OCR2AL3          \  Timer/Counter2 Output Compare Register A  Bytes Low Bit 3
+ 4 #BitIs    OCR2AL4          \  Timer/Counter2 Output Compare Register A  Bytes Low Bit 4
+ 5 #BitIs    OCR2AL5          \  Timer/Counter2 Output Compare Register A  Bytes Low Bit 5
+ 6 #BitIs    OCR2AL6          \  Timer/Counter2 Output Compare Register A  Bytes Low Bit 6
+ 7 #BitIs    OCR2AL7          \  Timer/Counter2 Output Compare Register A  Bytes Low Bit 7
+
+BitsIn   OCR2BH \ Timer/Counter2 Output Compare Register B  Bytes
+ 0 #BitIs    OCR2BH0          \  Timer/Counter2 Output Compare Register B  Bytes High Bit 8
+ 1 #BitIs    OCR2BH1          \  Timer/Counter2 Output Compare Register B  Bytes High Bit 9
+ 2 #BitIs    OCR2BH2          \  Timer/Counter2 Output Compare Register B  Bytes High Bit 10
+ 3 #BitIs    OCR2BH3          \  Timer/Counter2 Output Compare Register B  Bytes High Bit 11
+ 4 #BitIs    OCR2BH4          \  Timer/Counter2 Output Compare Register B  Bytes High Bit 12
+ 5 #BitIs    OCR2BH5          \  Timer/Counter2 Output Compare Register B  Bytes High Bit 13
+ 6 #BitIs    OCR2BH6          \  Timer/Counter2 Output Compare Register B  Bytes High Bit 14
+ 7 #BitIs    OCR2BH7          \  Timer/Counter2 Output Compare Register B  Bytes High Bit 15
+
+BitsIn   OCR2BL \ Timer/Counter2 Output Compare Register B  Bytes
+ 0 #BitIs    OCR2BL0          \  Timer/Counter2 Output Compare Register B  Bytes Low Bit 0
+ 1 #BitIs    OCR2BL1          \  Timer/Counter2 Output Compare Register B  Bytes Low Bit 1
+ 2 #BitIs    OCR2BL2          \  Timer/Counter2 Output Compare Register B  Bytes Low Bit 2
+ 3 #BitIs    OCR2BL3          \  Timer/Counter2 Output Compare Register B  Bytes Low Bit 3
+ 4 #BitIs    OCR2BL4          \  Timer/Counter2 Output Compare Register B  Bytes Low Bit 4
+ 5 #BitIs    OCR2BL5          \  Timer/Counter2 Output Compare Register B  Bytes Low Bit 5
+ 6 #BitIs    OCR2BL6          \  Timer/Counter2 Output Compare Register B  Bytes Low Bit 6
+ 7 #BitIs    OCR2BL7          \  Timer/Counter2 Output Compare Register B  Bytes Low Bit 7
+
+BitsIn   ICR2H \ Timer/Counter2 Input Capture Register  Bytes
+ 0 #BitIs    ICR2H0           \  Timer/Counter2 Input Capture Register  Bytes High Bit 8
+ 1 #BitIs    ICR2H1           \  Timer/Counter2 Input Capture Register  Bytes High Bit 9
+ 2 #BitIs    ICR2H2           \  Timer/Counter2 Input Capture Register  Bytes High Bit 10
+ 3 #BitIs    ICR2H3           \  Timer/Counter2 Input Capture Register  Bytes High Bit 11
+ 4 #BitIs    ICR2H4           \  Timer/Counter2 Input Capture Register  Bytes High Bit 12
+ 5 #BitIs    ICR2H5           \  Timer/Counter2 Input Capture Register  Bytes High Bit 13
+ 6 #BitIs    ICR2H6           \  Timer/Counter2 Input Capture Register  Bytes High Bit 14
+ 7 #BitIs    ICR2H7           \  Timer/Counter2 Input Capture Register  Bytes High Bit 15
+
+BitsIn   ICR2L \ Timer/Counter2 Input Capture Register  Bytes
+ 0 #BitIs    ICR2L0           \  Timer/Counter2 Input Capture Register  Bytes Low Bit 0
+ 1 #BitIs    ICR2L1           \  Timer/Counter2 Input Capture Register  Bytes Low Bit 1
+ 2 #BitIs    ICR2L2           \  Timer/Counter2 Input Capture Register  Bytes Low Bit 2
+ 3 #BitIs    ICR2L3           \  Timer/Counter2 Input Capture Register  Bytes Low Bit 3
+ 4 #BitIs    ICR2L4           \  Timer/Counter2 Input Capture Register  Bytes Low Bit 4
+ 5 #BitIs    ICR2L5           \  Timer/Counter2 Input Capture Register  Bytes Low Bit 5
+ 6 #BitIs    ICR2L6           \  Timer/Counter2 Input Capture Register  Bytes Low Bit 6
+ 7 #BitIs    ICR2L7           \  Timer/Counter2 Input Capture Register  Bytes Low Bit 7
+
+\  GTCCR \ General Timer/Counter Control Register
+
+
+\  ***** TIMER_COUNTER_0 *****************
+BitsIn   TIMSK0 \ Timer/Counter Interrupt Mask Register
+ 0 #BitIs    TOIE0            \  Timer/Counter0 Overflow Interrupt Enable
+ 1 #BitIs    OCIE0A           \  Timer/Counter0 Output Compare Match A Interrupt Enable
+ 2 #BitIs    OCIE0B           \  Timer/Counter0 Output Compare Match B Interrupt Enable
+
+BitsIn   TIFR0 \ Timer/Counter0 Interrupt Flag Register
+ 0 #BitIs    TOV0             \  Timer/Counter0 Overflow Flag
+ 1 #BitIs    OCF0A            \  Timer/Counter0 Output Compare Flag A
+ 2 #BitIs    OCF0B            \  Timer/Counter0 Output Compare Flag B
+
+BitsIn   TCCR0A \ Timer/Counter  Control Register A
+ 0 #BitIs    WGM00            \  Waveform Generation Mode bits
+ 1 #BitIs    WGM01            \  Waveform Generation Mode bits
+ 4 #BitIs    COM0B0           \  Compare Match Output B Mode bits
+ 5 #BitIs    COM0B1           \  Compare Match Output B Mode bits
+ 6 #BitIs    COM0A0           \  Compare Match Output A Mode bits
+ 7 #BitIs    COM0A1           \  Compare Match Output A Mode bits
+
+BitsIn   TCCR0B \ Timer/Counter Control Register B
+ 0 #BitIs    CS00             \  Clock Select bits
+ 1 #BitIs    CS01             \  Clock Select bits
+ 2 #BitIs    CS02             \  Clock Select bits
+ 3 #BitIs    WGM02            \  Waveform Generation Mode bit 2
+ 6 #BitIs    FOC0B            \  Force Output Compare B
+ 7 #BitIs    FOC0A            \  Force Output Compare A
+
+BitsIn   TCNT0 \ Timer/Counter0
+ 0 #BitIs    TCNT00           \  Timer/Counter0 Bit 0
+ 1 #BitIs    TCNT01           \  Timer/Counter0 Bit 1
+ 2 #BitIs    TCNT02           \  Timer/Counter0 Bit 2
+ 3 #BitIs    TCNT03           \  Timer/Counter0 Bit 3
+ 4 #BitIs    TCNT04           \  Timer/Counter0 Bit 4
+ 5 #BitIs    TCNT05           \  Timer/Counter0 Bit 5
+ 6 #BitIs    TCNT06           \  Timer/Counter0 Bit 6
+ 7 #BitIs    TCNT07           \  Timer/Counter0 Bit 7
+
+BitsIn   OCR0A \ Timer/Counter0 Output Compare Register A
+ 0 #BitIs    OCR0A0           \  Timer/Counter0 Output Compare Register A Bit 0
+ 1 #BitIs    OCR0A1           \  Timer/Counter0 Output Compare Register A Bit 1
+ 2 #BitIs    OCR0A2           \  Timer/Counter0 Output Compare Register A Bit 2
+ 3 #BitIs    OCR0A3           \  Timer/Counter0 Output Compare Register A Bit 3
+ 4 #BitIs    OCR0A4           \  Timer/Counter0 Output Compare Register A Bit 4
+ 5 #BitIs    OCR0A5           \  Timer/Counter0 Output Compare Register A Bit 5
+ 6 #BitIs    OCR0A6           \  Timer/Counter0 Output Compare Register A Bit 6
+ 7 #BitIs    OCR0A7           \  Timer/Counter0 Output Compare Register A Bit 7
+
+BitsIn   OCR0B \ Timer/Counter0 Output Compare Register B
+ 0 #BitIs    OCR0B0           \  Timer/Counter0 Output Compare Register B Bit 0
+ 1 #BitIs    OCR0B1           \  Timer/Counter0 Output Compare Register B Bit 1
+ 2 #BitIs    OCR0B2           \  Timer/Counter0 Output Compare Register B Bit 2
+ 3 #BitIs    OCR0B3           \  Timer/Counter0 Output Compare Register B Bit 3
+ 4 #BitIs    OCR0B4           \  Timer/Counter0 Output Compare Register B Bit 4
+ 5 #BitIs    OCR0B5           \  Timer/Counter0 Output Compare Register B Bit 5
+ 6 #BitIs    OCR0B6           \  Timer/Counter0 Output Compare Register B Bit 6
+ 7 #BitIs    OCR0B7           \  Timer/Counter0 Output Compare Register B Bit 7
+
+\   GTCCR \ General Timer/Counter Control Register
+
+
+\  ***** EXTERNAL_INTERRUPT *****************
+BitsIn   MCUCR \ MCU Control Register
+ 0 #BitIs    ISC00            \  Interrupt Sense Control 0 Bit 0
+ 1 #BitIs    ISC01            \  Interrupt Sense Control 0 Bit 1
+
+BitsIn   GIMSK \ General Interrupt Mask Register
+ 4 #BitIs    PCIE0            \  Pin Change Interrupt Enables
+ 5 #BitIs    PCIE1            \  Pin Change Interrupt Enables
+ 6 #BitIs    INT0             \  External Interrupt Request 0 Enable
+
+BitsIn   GIFR \ General Interrupt Flag register
+ 4 #BitIs    PCIF0            \  Pin Change Interrupt Flags
+ 5 #BitIs    PCIF1            \  Pin Change Interrupt Flags
+ 6 #BitIs    INTF0            \  External Interrupt Flag 0
+
+BitsIn   PCMSK1 \ Pin Change Enable Mask 1
+ 0 #BitIs    PCINT8           \  Pin Change Enable Mask 1 Bit 0
+ 1 #BitIs    PCINT9           \  Pin Change Enable Mask 1 Bit 1
+ 2 #BitIs    PCINT10          \  Pin Change Enable Mask 1 Bit 2
+ 3 #BitIs    PCINT11          \  Pin Change Enable Mask 1 Bit 3
+
+BitsIn   PCMSK0 \ Pin Change Enable Mask 0
+ 0 #BitIs    PCINT0           \  Pin Change Enable Mask 0 Bit 0
+ 1 #BitIs    PCINT1           \  Pin Change Enable Mask 0 Bit 1
+ 2 #BitIs    PCINT2           \  Pin Change Enable Mask 0 Bit 2
+ 3 #BitIs    PCINT3           \  Pin Change Enable Mask 0 Bit 3
+ 4 #BitIs    PCINT4           \  Pin Change Enable Mask 0 Bit 4
+ 5 #BitIs    PCINT5           \  Pin Change Enable Mask 0 Bit 5
+ 6 #BitIs    PCINT6           \  Pin Change Enable Mask 0 Bit 6
+ 7 #BitIs    PCINT7           \  Pin Change Enable Mask 0 Bit 7
+
+
+\  ***** CPU *****************
+BitsIn   PRR \ Power Reduction Register
+ 0 #BitIs    PRADC            \  Power Reduction ADC
+ 1 #BitIs    PRTIM0           \  Power Reduction Timer/Counter0
+ 2 #BitIs    PRTIM1           \  Power Reduction Timer/Counter1
+ 3 #BitIs    PRTIM2           \  Power Reduction Timer/Counter2
+ 4 #BitIs    PRSPI            \  Power Reduction SPI
+ 5 #BitIs    PRUSART0         \  Power Reduction USARTs
+ 6 #BitIs    PRUSART1         \  Power Reduction USARTs
+ 7 #BitIs    PRTWI            \  Power Reduction TWI
+
+BitsIn   CCP \ Configuration Change Protection
+ 0 #BitIs    CCP0             \  Configuration Change Protection Bit 0
+ 1 #BitIs    CCP1             \  Configuration Change Protection Bit 1
+ 2 #BitIs    CCP2             \  Configuration Change Protection Bit 2
+ 3 #BitIs    CCP3             \  Configuration Change Protection Bit 3
+ 4 #BitIs    CCP4             \  Configuration Change Protection Bit 4
+ 5 #BitIs    CCP5             \  Configuration Change Protection Bit 5
+ 6 #BitIs    CCP6             \  Configuration Change Protection Bit 6
+ 7 #BitIs    CCP7             \  Configuration Change Protection Bit 7
+
+BitsIn   CLKPR \ Clock Prescale Register
+ 0 #BitIs    CLKPS0           \  Clock Prescaler Select Bits
+ 1 #BitIs    CLKPS1           \  Clock Prescaler Select Bits
+ 2 #BitIs    CLKPS2           \  Clock Prescaler Select Bits
+ 3 #BitIs    CLKPS3           \  Clock Prescaler Select Bits
+
+BitsIn   CLKCR \ Clock Control Register
+ 0 #BitIs    CKSEL0           \  Clock Select Bits
+ 1 #BitIs    CKSEL1           \  Clock Select Bits
+ 2 #BitIs    CKSEL2           \  Clock Select Bits
+ 3 #BitIs    CKSEL3           \  Clock Select Bits
+ 4 #BitIs    SUT              \  Start-up Time
+ 5 #BitIs    CKOUTC           \  Clock Output (Copy). Active low.
+ 6 #BitIs    CSTR             \  Clock Switch Trigger
+ 7 #BitIs    OSCRDY           \  Oscillator Ready
+
+BitsIn   SREG \ Status Register
+ 0 #BitIs    SREG_C           \  Carry Flag
+ 1 #BitIs    SREG_Z           \  Zero Flag
+ 2 #BitIs    SREG_N           \  Negative Flag
+ 3 #BitIs    SREG_V           \  Two's Complement Overflow Flag
+ 4 #BitIs    SREG_S           \  Sign Bit
+ 5 #BitIs    SREG_H           \  Half Carry Flag
+ 6 #BitIs    SREG_T           \  Bit Copy Storage
+ 7 #BitIs    SREG_I           \  Global Interrupt Enable
+
+BitsIn   SPH \ Stack Pointer 
+ 0 #BitIs    SPH0             \  Stack Pointer  High Bit 8
+ 1 #BitIs    SPH1             \  Stack Pointer  High Bit 9
+ 2 #BitIs    SPH2             \  Stack Pointer  High Bit 10
+
+BitsIn   SPL \ Stack Pointer 
+ 0 #BitIs    SPL0             \  Stack Pointer  Low Bit 0
+ 1 #BitIs    SPL1             \  Stack Pointer  Low Bit 1
+ 2 #BitIs    SPL2             \  Stack Pointer  Low Bit 2
+ 3 #BitIs    SPL3             \  Stack Pointer  Low Bit 3
+ 4 #BitIs    SPL4             \  Stack Pointer  Low Bit 4
+ 5 #BitIs    SPL5             \  Stack Pointer  Low Bit 5
+ 6 #BitIs    SPL6             \  Stack Pointer  Low Bit 6
+ 7 #BitIs    SPL7             \  Stack Pointer  Low Bit 7
+
+BitsIn   MCUCR \ MCU Control Register
+ 3 #BitIs    SM0              \  Sleep Mode Select Bits
+ 4 #BitIs    SM1              \  Sleep Mode Select Bits
+ 5 #BitIs    SE               \  Sleep Enable
+
+BitsIn   MCUSR \ MCU Status Register
+ 0 #BitIs    PORF             \  Power-on reset flag
+ 1 #BitIs    EXTRF            \  External Reset Flag
+ 2 #BitIs    BORF             \  Brown-out Reset Flag
+ 3 #BitIs    WDRF             \  Watchdog Reset Flag
+
+BitsIn   GPIOR2 \ General Purpose I/O Register 2
+ 0 #BitIs    GPIOR20          \  General Purpose I/O Register 2 Bit 0
+ 1 #BitIs    GPIOR21          \  General Purpose I/O Register 2 Bit 1
+ 2 #BitIs    GPIOR22          \  General Purpose I/O Register 2 Bit 2
+ 3 #BitIs    GPIOR23          \  General Purpose I/O Register 2 Bit 3
+ 4 #BitIs    GPIOR24          \  General Purpose I/O Register 2 Bit 4
+ 5 #BitIs    GPIOR25          \  General Purpose I/O Register 2 Bit 5
+ 6 #BitIs    GPIOR26          \  General Purpose I/O Register 2 Bit 6
+ 7 #BitIs    GPIOR27          \  General Purpose I/O Register 2 Bit 7
+
+BitsIn   GPIOR1 \ General Purpose I/O Register 1
+ 0 #BitIs    GPIOR10          \  General Purpose I/O Register 1 Bit 0
+ 1 #BitIs    GPIOR11          \  General Purpose I/O Register 1 Bit 1
+ 2 #BitIs    GPIOR12          \  General Purpose I/O Register 1 Bit 2
+ 3 #BitIs    GPIOR13          \  General Purpose I/O Register 1 Bit 3
+ 4 #BitIs    GPIOR14          \  General Purpose I/O Register 1 Bit 4
+ 5 #BitIs    GPIOR15          \  General Purpose I/O Register 1 Bit 5
+ 6 #BitIs    GPIOR16          \  General Purpose I/O Register 1 Bit 6
+ 7 #BitIs    GPIOR17          \  General Purpose I/O Register 1 Bit 7
+
+BitsIn   GPIOR0 \ General Purpose I/O Register 0
+ 0 #BitIs    GPIOR00          \  General Purpose I/O Register 0 Bit 0
+ 1 #BitIs    GPIOR01          \  General Purpose I/O Register 0 Bit 1
+ 2 #BitIs    GPIOR02          \  General Purpose I/O Register 0 Bit 2
+ 3 #BitIs    GPIOR03          \  General Purpose I/O Register 0 Bit 3
+ 4 #BitIs    GPIOR04          \  General Purpose I/O Register 0 Bit 4
+ 5 #BitIs    GPIOR05          \  General Purpose I/O Register 0 Bit 5
+ 6 #BitIs    GPIOR06          \  General Purpose I/O Register 0 Bit 6
+ 7 #BitIs    GPIOR07          \  General Purpose I/O Register 0 Bit 7
+
+BitsIn   SPMCSR \ Store Program Memory Control and Status Register
+ 0 #BitIs    SPMEN            \  Store program Memory Enable
+ 1 #BitIs    PGERS            \  Page Erase
+ 2 #BitIs    PGWRT            \  Page Write
+ 3 #BitIs    RFLB             \  Read Fuse and Lock Bits
+ 4 #BitIs    CTPB             \  Clear Temporary Page Buffer
+ 5 #BitIs    RSIG             \  Read Device Signature Imprint Table
+
+BitsIn   OSCCAL0 \ Oscillator Calibration Register 8MHz
+ 0 #BitIs    OSCCAL00             \  Oscillator Calibration Register 8MHz Bit 0
+ 1 #BitIs    OSCCAL01             \  Oscillator Calibration Register 8MHz Bit 1
+ 2 #BitIs    OSCCAL02             \  Oscillator Calibration Register 8MHz Bit 2
+ 3 #BitIs    OSCCAL03             \  Oscillator Calibration Register 8MHz Bit 3
+ 4 #BitIs    OSCCAL04             \  Oscillator Calibration Register 8MHz Bit 4
+ 5 #BitIs    OSCCAL05             \  Oscillator Calibration Register 8MHz Bit 5
+ 6 #BitIs    OSCCAL06             \  Oscillator Calibration Register 8MHz Bit 6
+ 7 #BitIs    OSCCAL07             \  Oscillator Calibration Register 8MHz Bit 7
+
+BitsIn   OSCCAL1 \ Oscillator Calibration Register 32kHz
+ 0 #BitIs    OSCCAL10             \  Oscillator Calibration Register 32kHz Bit 0
+ 1 #BitIs    OSCCAL11             \  Oscillator Calibration Register 32kHz Bit 1
+
+BitsIn   OSCTCAL0A \ Oscillator Temperature Calibration Register A
+ 0 #BitIs    OSCTCAL0A0           \  Oscillator Temperature Calibration Register A Bit 0
+ 1 #BitIs    OSCTCAL0A1           \  Oscillator Temperature Calibration Register A Bit 1
+ 2 #BitIs    OSCTCAL0A2           \  Oscillator Temperature Calibration Register A Bit 2
+ 3 #BitIs    OSCTCAL0A3           \  Oscillator Temperature Calibration Register A Bit 3
+ 4 #BitIs    OSCTCAL0A4           \  Oscillator Temperature Calibration Register A Bit 4
+ 5 #BitIs    OSCTCAL0A5           \  Oscillator Temperature Calibration Register A Bit 5
+ 6 #BitIs    OSCTCAL0A6           \  Oscillator Temperature Calibration Register A Bit 6
+ 7 #BitIs    OSCTCAL0A7           \  Oscillator Temperature Calibration Register A Bit 7
+
+BitsIn   OSCTCAL0B \ Oscillator Temperature Calibration Register B
+ 0 #BitIs    OSCTCAL0B0           \  Oscillator Temperature Calibration Register B Bit 0
+ 1 #BitIs    OSCTCAL0B1           \  Oscillator Temperature Calibration Register B Bit 1
+ 2 #BitIs    OSCTCAL0B2           \  Oscillator Temperature Calibration Register B Bit 2
+ 3 #BitIs    OSCTCAL0B3           \  Oscillator Temperature Calibration Register B Bit 3
+ 4 #BitIs    OSCTCAL0B4           \  Oscillator Temperature Calibration Register B Bit 4
+ 5 #BitIs    OSCTCAL0B5           \  Oscillator Temperature Calibration Register B Bit 5
+ 6 #BitIs    OSCTCAL0B6           \  Oscillator Temperature Calibration Register B Bit 6
+ 7 #BitIs    OSCTCAL0B7           \  Oscillator Temperature Calibration Register B Bit 7
+
+
+\  ***** TOCPM *****************
+BitsIn   TOCPMSA1 \ Timer Output Compare Pin Mux Selection 1
+ 0 #BitIs    TOCC4S0          \  Timer Output Compare Channel 4 Selection Bits
+ 1 #BitIs    TOCC4S1          \  Timer Output Compare Channel 4 Selection Bits
+ 2 #BitIs    TOCC5S0          \  Timer Output Compare Channel 5 Selection Bits
+ 3 #BitIs    TOCC5S1          \  Timer Output Compare Channel 5 Selection Bits
+ 4 #BitIs    TOCC6S0          \  Timer Output Compare Channel 6 Selection Bits
+ 5 #BitIs    TOCC6S1          \  Timer Output Compare Channel 6 Selection Bits
+ 6 #BitIs    TOCC7S0          \  Timer Output Compare Channel 7 Selection Bits
+ 7 #BitIs    TOCC7S1          \  Timer Output Compare Channel 7 Selection Bits
+
+BitsIn   TOCPMSA0 \ Timer Output Compare Pin Mux Selection 0
+ 0 #BitIs    TOCC0S0          \  Timer Output Compare Channel 0 Selection Bits
+ 1 #BitIs    TOCC0S1          \  Timer Output Compare Channel 0 Selection Bits
+ 2 #BitIs    TOCC1S0          \  Timer Output Compare Channel 1 Selection Bits
+ 3 #BitIs    TOCC1S1          \  Timer Output Compare Channel 1 Selection Bits
+ 4 #BitIs    TOCC2S0          \  Timer Output Compare Channel 2 Selection Bits
+ 5 #BitIs    TOCC2S1          \  Timer Output Compare Channel 2 Selection Bits
+ 6 #BitIs    TOCC3S0          \  Timer Output Compare Channel 3 Selection Bits
+ 7 #BitIs    TOCC3S1          \  Timer Output Compare Channel 3 Selection Bits
+
+BitsIn   TOCPMCOE \ Timer Output Compare Pin Mux Channel Output Enable
+ 0 #BitIs    TOCC0OE          \  Timer Output Compare Channel 0 Output Enable
+ 1 #BitIs    TOCC1OE          \  Timer Output Compare Channel 1 Output Enable
+ 2 #BitIs    TOCC2OE          \  Timer Output Compare Channel 2 Output Enable
+ 3 #BitIs    TOCC3OE          \  Timer Output Compare Channel 3 Output Enable
+ 4 #BitIs    TOCC4OE          \  Timer Output Compare Channel 4 Output Enable
+ 5 #BitIs    TOCC5OE          \  Timer Output Compare Channel 5 Output Enable
+ 6 #BitIs    TOCC6OE          \  Timer Output Compare Channel 6 Output Enable
+ 7 #BitIs    TOCC7OE          \  Timer Output Compare Channel 7 Output Enable
+
+
+\  ***** USART0 *****************
+BitsIn   UDR0 \ USART I/O Data Register
+ 0 #BitIs    UDR00            \  USART I/O Data Register Bit 0
+ 1 #BitIs    UDR01            \  USART I/O Data Register Bit 1
+ 2 #BitIs    UDR02            \  USART I/O Data Register Bit 2
+ 3 #BitIs    UDR03            \  USART I/O Data Register Bit 3
+ 4 #BitIs    UDR04            \  USART I/O Data Register Bit 4
+ 5 #BitIs    UDR05            \  USART I/O Data Register Bit 5
+ 6 #BitIs    UDR06            \  USART I/O Data Register Bit 6
+ 7 #BitIs    UDR07            \  USART I/O Data Register Bit 7
+
+BitsIn   UCSR0A \ USART Control and Status Register A
+ 0 #BitIs    MPCM0            \  Multi-processor Communication Mode
+ 1 #BitIs    U2X0             \  Double the USART transmission speed
+ 2 #BitIs    UPE0             \  Parity Error
+ 3 #BitIs    DOR0             \  Data overRun
+ 4 #BitIs    FE0              \  Framing Error
+ 5 #BitIs    UDRE0            \  USART Data Register Empty
+ 6 #BitIs    TXC0             \  USART Transmitt Complete
+ 7 #BitIs    RXC0             \  USART Receive Complete
+
+BitsIn   UCSR0B \ USART Control and Status Register B
+ 0 #BitIs    TXB80            \  Transmit Data Bit 8
+ 1 #BitIs    RXB80            \  Receive Data Bit 8
+ 2 #BitIs    UCSZ02           \  Character Size
+ 3 #BitIs    TXEN0            \  Transmitter Enable
+ 4 #BitIs    RXEN0            \  Receiver Enable
+ 5 #BitIs    UDRIE0           \  USART Data register Empty Interrupt Enable
+ 6 #BitIs    TXCIE0           \  TX Complete Interrupt Enable
+ 7 #BitIs    RXCIE0           \  RX Complete Interrupt Enable
+
+BitsIn   UCSR0C \ USART Control and Status Register C
+ 0 #BitIs    UCPOL0           \  Clock Polarity
+ 1 #BitIs    UCSZ00           \  Character Size
+ 2 #BitIs    UCSZ01           \  Character Size
+ 3 #BitIs    USBS0            \  Stop Bit Select
+ 4 #BitIs    UPM00            \  Parity Mode Bits
+ 5 #BitIs    UPM01            \  Parity Mode Bits
+ 6 #BitIs    UMSEL00          \  USART Mode Select
+ 7 #BitIs    UMSEL01          \  USART Mode Select
+
+BitsIn   UCSR0D \ USART Control and Status Register D
+ 5 #BitIs    SFDE0            \  USART RX Start Frame Detection Enable
+ 6 #BitIs    RXS0             \  USART RX Start Flag
+ 7 #BitIs    RXSIE0           \  USART RX Start Interrupt Enable
+
+BitsIn   UBRR0H \ USART Baud Rate Register  Bytes
+ 0 #BitIs    UBRR0H0          \  USART Baud Rate Register  Bytes High Bit 8
+ 1 #BitIs    UBRR0H1          \  USART Baud Rate Register  Bytes High Bit 9
+ 2 #BitIs    UBRR0H2          \  USART Baud Rate Register  Bytes High Bit 10
+ 3 #BitIs    UBRR0H3          \  USART Baud Rate Register  Bytes High Bit 11
+
+BitsIn   UBRR0L \ USART Baud Rate Register  Bytes
+ 0 #BitIs    UBRR0L0          \  USART Baud Rate Register  Bytes Low Bit 0
+ 1 #BitIs    UBRR0L1          \  USART Baud Rate Register  Bytes Low Bit 1
+ 2 #BitIs    UBRR0L2          \  USART Baud Rate Register  Bytes Low Bit 2
+ 3 #BitIs    UBRR0L3          \  USART Baud Rate Register  Bytes Low Bit 3
+ 4 #BitIs    UBRR0L4          \  USART Baud Rate Register  Bytes Low Bit 4
+ 5 #BitIs    UBRR0L5          \  USART Baud Rate Register  Bytes Low Bit 5
+ 6 #BitIs    UBRR0L6          \  USART Baud Rate Register  Bytes Low Bit 6
+ 7 #BitIs    UBRR0L7          \  USART Baud Rate Register  Bytes Low Bit 7
+
+BitsIn   REMAP \ Remap Port Pins
+0  #BitIs    U0MAP            \  USART0 Pin Mapping
+
+
+\  ***** SPI *****************
+BitsIn  SPCR \ SPI Control Register
+ 0 #BitIs    SPR0             \  SPI Clock Rate Selects
+ 1 #BitIs    SPR1             \  SPI Clock Rate Selects
+ 2 #BitIs    CPHA             \  Clock Phase
+ 3 #BitIs    CPOL             \  Clock polarity
+ 4 #BitIs    MSTR             \  Master/Slave Select
+ 5 #BitIs    DORD             \  Data Order
+ 6 #BitIs    SPE              \  SPI Enable
+ 7 #BitIs    SPIE             \  SPI Interrupt Enable
+
+BitsIn   SPSR \ SPI Status Register
+ 0 #BitIs    SPI2X            \  Double SPI Speed Bit
+ 6 #BitIs    WCOL             \  Write Collision Flag
+ 7 #BitIs    SPIF             \  SPI Interrupt Flag
+
+BitsIn   SPDR \ SPI Data Register
+ 0 #BitIs    SPDR0            \  SPI Data Register Bit 0
+ 1 #BitIs    SPDR1            \  SPI Data Register Bit 1
+ 2 #BitIs    SPDR2            \  SPI Data Register Bit 2
+ 3 #BitIs    SPDR3            \  SPI Data Register Bit 3
+ 4 #BitIs    SPDR4            \  SPI Data Register Bit 4
+ 5 #BitIs    SPDR5            \  SPI Data Register Bit 5
+ 6 #BitIs    SPDR6            \  SPI Data Register Bit 6
+ 7 #BitIs    SPDR7            \  SPI Data Register Bit 7
+
+BitsIn   REMAP \ Remap Port Pins
+ 1 #BitIs    SPIMAP           \  SPI Pin Mapping
+
+
+\  ***** PORTA *****************
+BitsIn   PORTCR \ Port Control Register
+ 0 #BitIs    BBMA             \  Break-Before-Make Mode Enable
+
+BitsIn   PUEA \ Pull-up Enable Control Register
+ 0 #BitIs    PUEA0            \  Pull-up Enable Control Register Bit 0
+ 1 #BitIs    PUEA1            \  Pull-up Enable Control Register Bit 1
+ 2 #BitIs    PUEA2            \  Pull-up Enable Control Register Bit 2
+ 3 #BitIs    PUEA3            \  Pull-up Enable Control Register Bit 3
+ 4 #BitIs    PUEA4            \  Pull-up Enable Control Register Bit 4
+ 5 #BitIs    PUEA5            \  Pull-up Enable Control Register Bit 5
+ 6 #BitIs    PUEA6            \  Pull-up Enable Control Register Bit 6
+ 7 #BitIs    PUEA7            \  Pull-up Enable Control Register Bit 7
+
+BitsIn   PORTA \ Port A Data Register
+ 0 #BitIs    PORTA0           \  Port A Data Register Bit 0
+ 1 #BitIs    PORTA1           \  Port A Data Register Bit 1
+ 2 #BitIs    PORTA2           \  Port A Data Register Bit 2
+ 3 #BitIs    PORTA3           \  Port A Data Register Bit 3
+ 4 #BitIs    PORTA4           \  Port A Data Register Bit 4
+ 5 #BitIs    PORTA5           \  Port A Data Register Bit 5
+ 6 #BitIs    PORTA6           \  Port A Data Register Bit 6
+ 7 #BitIs    PORTA7           \  Port A Data Register Bit 7
+
+BitsIn   DDRA \ Data Direction Register, Port A
+ 0 #BitIs    DDRA0            \  Data Direction Register, Port A Bit 0
+ 1 #BitIs    DDRA1            \  Data Direction Register, Port A Bit 1
+ 2 #BitIs    DDRA2            \  Data Direction Register, Port A Bit 2
+ 3 #BitIs    DDRA3            \  Data Direction Register, Port A Bit 3
+ 4 #BitIs    DDRA4            \  Data Direction Register, Port A Bit 4
+ 5 #BitIs    DDRA5            \  Data Direction Register, Port A Bit 5
+ 6 #BitIs    DDRA6            \  Data Direction Register, Port A Bit 6
+ 7 #BitIs    DDRA7            \  Data Direction Register, Port A Bit 7
+
+BitsIn   PINA \ Port A Input Pins
+ 0 #BitIs    PINA0            \  Port A Input Pins Bit 0
+ 1 #BitIs    PINA1            \  Port A Input Pins Bit 1
+ 2 #BitIs    PINA2            \  Port A Input Pins Bit 2
+ 3 #BitIs    PINA3            \  Port A Input Pins Bit 3
+ 4 #BitIs    PINA4            \  Port A Input Pins Bit 4
+ 5 #BitIs    PINA5            \  Port A Input Pins Bit 5
+ 6 #BitIs    PINA6            \  Port A Input Pins Bit 6
+ 7 #BitIs    PINA7            \  Port A Input Pins Bit 7
+
+BitsIn  PHDE \ Port High Drive Enable Register
+ 0 #BitIs    PHDEA0           \  PortA High Drive Enable
+ 1 #BitIs    PHDEA1           \  PortA High Drive Enable
+
+
+\ Полный набор инструкций 8-ми разрядных микроконтроллеров семейства AVR.
+\ Система обозначения операндов в основном совпадает с фирменной документацией,
+\ но для большей информативности и различимости, введены дополнительные.
+\ Rr    - регистр общего назначения (РОН), R[0...31]
+\ Rd    - регистр общего назначения, R[0...31]
+\ Rdr   - частный случай, когда Rd=Rr
+\ R'd   - старшие регистры, R[16...31]
+\ R`d   - старшие регистры, R[16...23]
+\ R"d   - чётные регистры, R[2,4,...30]
+\ R*d   - регистровые пары, R[24,26,28,30]
+\ b     - бит в РОН или порту, доступный для битовых команд
+\ sb    - бит в системном регистре SREG 
+\ k     - абсолютный адрес в пространстве ROM, всегда >0
+\ -k    - относительный адрес, может быть отрицательным
+\ (k)   - абсолютный адрес в пространстве RAM
+\ A     - адрес в пространстве ввода-вывода, 0<=A<=31 (или 32<=(k)<=63 в RAM)
+\ !K!   - байт маски, при ассемблировании инвертируется
+\ K!    - байт, константа
+
+\ ------------------------------------------------------------------------------
+\ первое opcode (последнее при поиске) в цепи - заглушка
+\ ------------------------------------------------------------------------------
+cmd: ?unknown?  ?.   ;  Opcode: ................    \ заглушка        
+\ порядок следования команд в этом списке в основном совпадает с документацией,
+\ но похожие команды должны следовать от большего числа параметров к меньшим.
+
+\ арифметические и логические операции
+cmd: ADD    Rd, Rr   ;  Opcode: 000011rdddddrrrr    \ Суммирование без переноса | Rd=Rd + Rr 
+cmd: ADC    Rd, Rr   ;  Opcode: 000111rdddddrrrr    \ Суммирование с переносом | Rd=Rd + Rr + C
+cmd: ADIW   R*d, K!  ;  Opcode: 10010110KKddKKKK    \ Сложить константу и слово | Rdh:Rdl=Rdh:Rdl + K6 
+cmd: SUB    Rd, Rr   ;  Opcode: 000110rdddddrrrr    \ Вычитание без переноса | Rd=Rd - Rr
+cmd: SUBI   R'd, K!  ;  Opcode: 0101KKKKddddKKKK    \ Вычитание константы | Rd=Rd - K8
+cmd: SBC    Rd, Rr   ;  Opcode: 000010rdddddrrrr    \ Вычитание с переносом | Rd=Rd - Rr - C
+cmd: SBCI   R'd, K!  ;  Opcode: 0100KKKKddddKKKK    \ Вычитание константы с переносом | Rd=Rd - K8 - C
+cmd: SBIW   R*d, K!  ;  Opcode: 10010111KKddKKKK    \ Вычесть константу из слова | Rdh:Rdl=Rdh:Rdl - K6
+cmd: AND    Rd, Rr   ;  Opcode: 001000rdddddrrrr    \ Логическое И | Rd=Rd · Rr
+cmd: CBR    R'd, !K! ;  Opcode: 0111KKKKddddKKKK    \ Сбросить бит (биты) в регистре | Rd=Rd · ($FF - K8)
+cmd: ANDI   R'd, K!  ;  Opcode: 0111KKKKddddKKKK    \ Логическое И с константой | Rd=Rd · K8
+cmd: OR     Rd, Rr   ;  Opcode: 001010rdddddrrrr    \ Логическое ИЛИ | Rd=Rd V Rr
+cmd: SBR    R'd, K!  ;  Opcode: 0110KKKKddddKKKK    \ Установить бит (биты) в регистре | Rd=Rd V K8
+cmd: ORI    R'd, K!  ;  Opcode: 0110KKKKddddKKKK    \ Логическое ИЛИ с константой | Rd=Rd V K8
+cmd: EOR    Rd, Rr   ;  Opcode: 001001rdddddrrrr    \ Логическое исключающее ИЛИ | Rd=Rd EOR Rr
+cmd: COM    Rd       ;  Opcode: 1001010ddddd0000    \ Побитная Инверсия | Rd=$FF - Rd
+cmd: NEG    Rd       ;  Opcode: 1001010ddddd0001    \ Изменение знака (Доп. код) | Rd=$00 - Rd
+cmd: INC    Rd       ;  Opcode: 1001010ddddd0011    \ Инкрементировать значение регистра | Rd=Rd + 1
+cmd: DEC    Rd       ;  Opcode: 1001010ddddd1010    \ Декрементировать значение регистра | Rd=Rd -1
+cmd: TST    Rdr      ;  Opcode: 001000rdddddrrrr    \ Проверка на ноль либо отрицательность | Rd=Rd · Rd
+cmd: CLR    Rdr      ;  Opcode: 001001rdddddrrrr    \ Очистить регистр | Rd=0
+cmd: SER    R'd      ;  Opcode: 11101111dddd1111    \ Установить регистр | Rd=$FF
+
+\ передача управления
+cmd: RJMP   -k       ;  Opcode: 1100kkkkkkkkkkkk    \ Относительный переход | PC=PC + k +1
+cmd: IJMP            ;  Opcode: 1001010000001001    \ Косвенный переход на (Z) | PC=Z
+cmd: RCALL  -k       ;  Opcode: 1101kkkkkkkkkkkk    \ Относительный вызов подпрограммы | STACK=PC+1, PC=PC + k + 1
+cmd: ICALL           ;  Opcode: 1001010100001001    \ Косвенный вызов (Z) | STACK=PC+1, PC=Z 
+cmd: RET             ;  Opcode: 1001010100001000    \ Возврат из подпрограммы | PC=STACK
+cmd: RETI            ;  Opcode: 1001010100011000    \ Возврат из прерывания | PC=STACK
+cmd: CPSE   Rd, Rr   ;  Opcode: 000100rdddddrrrr    \ Сравнить, пропустить если равны | if (Rd==Rr) PC=PC 2 or 3
+cmd: CP     Rd, Rr   ;  Opcode: 000101rdddddrrrr    \ Сравнить | Rd -Rr
+cmd: CPC    Rd, Rr   ;  Opcode: 000001rdddddrrrr    \ Сравнить с переносом | Rd - Rr - C
+cmd: CPI    R'd, K!  ;  Opcode: 0011KKKKddddKKKK    \ Сравнить с константой | Rd - K
+cmd: SBRC   Rr, b    ;  Opcode: 1111110rrrrr0bbb    \ Пропустить если бит в регистре очищен |if(Rr(b)==0) PC=PC + 2 or 3
+cmd: SBRS   Rr, b    ;  Opcode: 1111111rrrrr0bbb    \ Пропустить если бит в регистре установлен | if(Rr(b)==1) PC=PC + 2 or 3   
+cmd: SBIC   A,  b    ;  Opcode: 10011001AAAAAbbb    \ Пропустить если бит в порту очищен | if(I/O(P,b)==0) PC=PC + 2 or 3
+cmd: SBIS   A,  b    ;  Opcode: 10011011AAAAAbbb    \ Пропустить если бит в порту установлен | if(I/O(P,b)==1) PC=PC + 2 or 3
+cmd: BRBS   sb, -k   ;  Opcode: 111100kkkkkkksss    \ Перейти если флаг в SREG установлен | if(SREG(s)==1) PC=PC + k + 1
+cmd: BRBC   sb, -k   ;  Opcode: 111101kkkkkkksss    \ Перейти если флаг в SREG очищен | if(SREG(s)==0) PC=PC + k + 1
+cmd: BREQ   -k       ;  Opcode: 111100kkkkkkk001    \ Перейти если равно | if(Z==1) PC=PC + k + 1
+cmd: BRNE   -k       ;  Opcode: 111101kkkkkkk001    \ Перейти если не равно | if(Z==0) PC=PC + k + 1
+cmd: BRLO   -k       ;  Opcode: 111100kkkkkkk000    \ Перейти если меньше | if(C==1) PC=PC + k + 1
+cmd: BRCS   -k       ;  Opcode: 111100kkkkkkk000    \ Перейти если перенос установлен | if(C==1) PC=PC + k + 1
+cmd: BRSH   -k       ;  Opcode: 111101kkkkkkk000    \ Перейти если равно или больше | if(C==0) PC=PC + k + 1
+cmd: BRCC   -k       ;  Opcode: 111101kkkkkkk000    \ Перейти если перенос очищен | if(C==0) PC=PC + k + 1
+cmd: BRMI   -k       ;  Opcode: 111100kkkkkkk010    \ Перейти если минус | if(N==1) PC=PC + k + 1
+cmd: BRPL   -k       ;  Opcode: 111101kkkkkkk010    \ Перейти если плюс | if(N==0) PC=PC + k + 1
+cmd: BRGE   -k       ;  Opcode: 111101kkkkkkk100    \ Перейти если больше или равно (со знаком) | if(S==0) PC=PC + k + 1
+cmd: BRLT   -k       ;  Opcode: 111100kkkkkkk100    \ Перейти если меньше нуля (со знаком) | if(S==1) PC=PC + k + 1
+cmd: BRHS   -k       ;  Opcode: 111100kkkkkkk101    \ Перейти если флаг внутреннего переноса установлен | if(H==1) PC=PC + k + 1
+cmd: BRHC   -k       ;  Opcode: 111101kkkkkkk101    \ Перейти если флаг внутреннего переноса очищен | if(H==0) PC=PC + k + 1
+cmd: BRTS   -k       ;  Opcode: 111100kkkkkkk110    \ Перейти если флаг T установлен | if(T==1) PC=PC + k + 1
+cmd: BRTC   -k       ;  Opcode: 111101kkkkkkk110    \ Перейти если флаг T очищен | if(T==0) PC=PC + k + 1
+cmd: BRVS   -k       ;  Opcode: 111100kkkkkkk011    \ Перейти если флаг переполнения установлен | if(V==1) PC=PC + k + 1
+cmd: BRVC   -k       ;  Opcode: 111101kkkkkkk011    \ Перейти если флаг переполнения очищен | if(V==0) PC=PC + k + 1
+cmd: BRIE   -k       ;  Opcode: 111100kkkkkkk111    \ Перейти если прерывания разрешены | if(I==1) PC=PC + k + 1
+cmd: BRID   -k       ;  Opcode: 111101kkkkkkk111    \ Перейти если прерывания запрещены | if(I==0) PC=PC + k + 1
+
+\ перемещение данных
+cmd: MOV    Rd, Rr   ;  Opcode: 001011rdddddrrrr    \ Скопировать регистр | Rd=Rr
+cmd: MOVW   R"d, R"r ;  Opcode: 00000001ddddrrrr    \ Скопировать пару регистров | Rd+1:Rd=Rr+1:Rr, r,d чётные
+cmd: LDI    R'd, K!  ;  Opcode: 1110KKKKddddKKKK    \ Загрузить константу | Rd=K
+cmd: LD     Rd, X+   ;  Opcode: 1001000ddddd1101    \ Косвенная загрузка с пост-инкрементом | Rd=(X), X=X+1
+cmd: LD     Rd, -X   ;  Opcode: 1001000ddddd1110    \ Косвенная загрузка с пре-декрементом | X=X-1, Rd=(X)
+cmd: LD     Rd, X    ;  Opcode: 1001000ddddd1100    \ Косвенная загрузка | Rd=(X)
+cmd: LDD    Rd, Y+q  ;  Opcode: 10q0qq0ddddd1qqq    \ Косвенная загрузка со смещением | Rd=(Y+q) 
+cmd: LD     Rd, Y+   ;  Opcode: 1001000ddddd1001    \ Косвенная загрузка с пост-инкрементом | Rd=(Y), Y=Y+1
+cmd: LD     Rd, -Y   ;  Opcode: 1001000ddddd1010    \ Косвенная загрузка с пре-декрементом | Y=Y-1, Rd=(Y)
+cmd: LD     Rd, Y    ;  Opcode: 1000000ddddd1000    \ Косвенная загрузка | Rd=(Y)
+cmd: LDD    Rd, Z+q  ;  Opcode: 10q0qq0ddddd0qqq    \ Косвенная загрузка со смещением | Rd=(Z+q) 
+cmd: LD     Rd, Z+   ;  Opcode: 1001000ddddd0001    \ Косвенная загрузка с пост-инкрементом | Rd=(Z), Z=Z+1
+cmd: LD     Rd, -Z   ;  Opcode: 1001000ddddd0010    \ Косвенная загрузка с пре-декрементом | Z=Z-1, Rd=(Z)
+cmd: LD     Rd, Z    ;  Opcode: 1000000ddddd0000    \ Косвенная загрузка | Rd=(Z)
+cmd: LDS    Rd, (k)  ;  Opcode: 1001000ddddd0000 ext: kkkkkkkkkkkkkkkk \ Прямая загрузка | Rd=(k)
+cmd: ST     X+, Rr   ;  Opcode: 1001001rrrrr1101    \ Косвенное сохранение с пост-инкрементом | (X)=Rr, X=X+1
+cmd: ST     -X, Rr   ;  Opcode: 1001001rrrrr1110    \ Косвенное сохранение с пре-декрементом | X=X-1, (X)=Rr
+cmd: ST     X,  Rr   ;  Opcode: 1001001rrrrr1100    \ Косвенное сохранение | (X)=Rr
+cmd: STD    Y+q, Rr  ;  Opcode: 10q0qq1rrrrr1qqq    \ Косвенное сохранение со смещением | (Y+q)=Rr
+cmd: ST     Y+, Rr   ;  Opcode: 1001001rrrrr1001    \ Косвенное сохранение с пост-инкрементом | (Y)=Rr, Y=Y+1 
+cmd: ST     -Y, Rr   ;  Opcode: 1001001rrrrr1010    \ Косвенное сохранение с пре-декрементом | Y=Y-1, (Y)=Rr 
+cmd: ST     Y,  Rr   ;  Opcode: 1000001rrrrr1000    \ Косвенное сохранение | (Y)=Rr
+cmd: STD    Z+q, Rr  ;  Opcode: 10q0qq1rrrrr0qqq    \ Косвенное сохранение со смещением | (Z+q)=Rr
+cmd: ST     Z+, Rr   ;  Opcode: 1001001rrrrr0001    \ Косвенное сохранение с пост-инкрементом | (Z)=Rr, Z=Z+1 
+cmd: ST     -Z, Rr   ;  Opcode: 1001001rrrrr0010    \ Косвенное сохранение с пре-декрементом | Z=Z-1, (Z)=Rr
+cmd: ST     Z,  Rr   ;  Opcode: 1000001rrrrr0000    \ Косвенное сохранение | (Z)=Rr
+cmd: STS    (k), Rr  ;  Opcode: 1001001rrrrr0000 ext: kkkkkkkkkkkkkkkk \ Прямое сохранение | (k)=Rr
+cmd: LPM    Rd, Z+   ;  Opcode: 1001000ddddd0101    \ Загрузка из программной памяти с пост-инкрементом | Rd=(Z), Z=Z+1
+cmd: LPM    Rd, Z    ;  Opcode: 1001000ddddd0100    \ Загрузка из программной памяти | Rd=(Z)
+cmd: LPM             ;  Opcode: 1001010111001000    \ Загрузка из программной памяти | R0=(Z)
+cmd: SPM             ;  Opcode: 1001010111101000    \ Сохранение в программной памяти | (Z)=R1:R0
+cmd: IN     Rd, A    ;  Opcode: 10110AAdddddAAAA    \ Чтение порта | Rd=P
+cmd: OUT    A,  Rr   ;  Opcode: 10111AArrrrrAAAA    \ Запись в порт | P=Rr
+cmd: PUSH   Rr       ;  Opcode: 1001001rrrrr1111    \ Занесение регистра в стек | STACK=Rr
+cmd: POP    Rd       ;  Opcode: 1001000ddddd1111    \ Извлечение регистра из стека | Rd=STACK
+
+\ битовые операции
+cmd: SBI    A,  b    ;  Opcode: 10011010AAAAAbbb    \ Установить бит в порту | I/O(P,b)=1
+cmd: CBI    A,  b    ;  Opcode: 10011000AAAAAbbb    \ Очистить бит в порту | I/O(P,b)=0
+cmd: LSL    Rdr      ;  Opcode: 000011rdddddrrrr    \ Логический сдвиг влево | Rd(n+1)=Rd(n), Rd(0)=0, C=Rd(7)
+cmd: LSR    Rd       ;  Opcode: 1001010ddddd0110    \ Логический сдвиг вправо | Rd(n)=Rd(n+1), Rd(7)=0, C=Rd(0)
+cmd: ROL    Rdr      ;  Opcode: 000111rdddddrrrr    \ Циклический сдвиг влево через C | Rd(0)=C, Rd(n+1)=Rd(n), C=Rd(7)
+cmd: ROR    Rd       ;  Opcode: 1001010ddddd0111    \ Циклический сдвиг вправо через C | Rd(7)=C, Rd(n)=Rd(n+1), C=Rd(0)
+cmd: ASR    Rd       ;  Opcode: 1001010ddddd0101    \ Арифметический сдвиг вправо | Rd(n)=Rd(n+1), n=0,...,6
+cmd: SWAP   Rd       ;  Opcode: 1001010ddddd0010    \ Перестановка тетрад | Rd(3..0)=Rd(7..4), Rd(7..4)=Rd(3..0)
+cmd: BSET   sb       ;  Opcode: 100101000sss1000    \ Установка флага | SREG(s)=1
+cmd: BCLR   sb       ;  Opcode: 100101001sss1000    \ Очистка флага | SREG(s)=0
+cmd: BST    Rd, b    ;  Opcode: 1111101ddddd0bbb    \ Сохранить бит из регистра в T | T=Rr(b)
+cmd: BLD    Rd, b    ;  Opcode: 1111100ddddd0bbb    \ Загрузить бит из T в регистр | Rd(b)=T
+cmd: SEC             ;  Opcode: 1001010000001000    \ Установить флаг переноса | C=1
+cmd: CLC             ;  Opcode: 1001010010001000    \ Очистить флаг переноса | C=0
+cmd: SEN             ;  Opcode: 1001010000101000    \ Очистить флаг отрицательного числа | N=1
+cmd: CLN             ;  Opcode: 1001010010101000    \ Очистить флаг отрицательного числа | N=0
+cmd: SEZ             ;  Opcode: 1001010000011000    \ Установить флаг нуля | Z=1
+cmd: CLZ             ;  Opcode: 1001010010011000    \ Очистить флаг нуля | Z=0
+cmd: SEI             ;  Opcode: 1001010001111000    \ Установить флаг прерываний | I=1
+cmd: CLI             ;  Opcode: 1001010011111000    \ Очистить флаг прерываний | I=0
+cmd: SES             ;  Opcode: 1001010001001000    \ Установить флаг числа со знаком | S=1
+cmd: CLS             ;  Opcode: 1001010011001000    \ Очистить флаг числа со знаком | S=0
+cmd: SEV             ;  Opcode: 1001010000111000    \ Установить флаг переполнения | V=1
+cmd: CLV             ;  Opcode: 1001010010111000    \ Очистить флаг переполнения | V=0
+cmd: SET             ;  Opcode: 1001010001101000    \ Установить флаг T | T=1
+cmd: CLT             ;  Opcode: 1001010011101000    \ Очистить флаг T | T=0 
+cmd: SEH             ;  Opcode: 1001010001011000    \ Установить флаг внутреннего переноса | H=1
+cmd: CLH             ;  Opcode: 1001010011011000    \ Очистить флаг внутреннего переноса | H=0
+
+\ системные
+cmd: NOP             ;  Opcode: 0000000000000000    \ Нет операции  
+cmd: SLEEP           ;  Opcode: 1001010110001000    \ Спать (уменьшить энергопотребление)  
+cmd: WDR             ;  Opcode: 1001010110101000    \ Сброс сторожевого таймера  
+
+\ остальные
+cmd: BREAK           ;  Opcode: 1001010110011000    \ Останов для отладки  
+
+
+
+
+
+\  ***** END OF FILE ******************************************************
+
+
+

@@ -1,3 +1,0 @@
-Exception #-2003 at: iwTnBoot.f:3:7:
-finger constant StartIwBoot \ маркер начала библиотеки загрузчика
-     ^ -2003 слово или файл не найден

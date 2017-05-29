@@ -1,0 +1,52 @@
+
+\ *************************************************************************
+\ * A P P L I C A T I O N   N O T E   F O R   T H E   A V R   F A M I L Y
+\ * 
+\ * Number            : AVR000
+\ * File Name         : tn441def.inc
+\ * Title             : Register/Bit Definitions for the ATtiny441
+\ * Created           : 2015-06-25 09:38
+\ * Version           : 1.00
+\ * Support e-mail    : avr@atmel.com
+\ * Target MCU        : ATtiny441
+\ * 
+\ * DESCRIPTION
+\ * When including this file in the assembly program file, all I/O register 
+\ * names and I/O register bit names appearing in the data book can be used.
+\ * In addition, the six registers forming the three data pointers X, Y and 
+\ * Z have been assigned names XL \ ZH. Highest RAM address for Internal 
+\ * SRAM is also defined 
+\ * 
+\ *************************************************************************
+DECIMAL
+
+\  ***** SPECIFY DEVICE ***************************************************
+\ device ATtiny441
+0x1E9215 CONSTANT  device_SIGNATURE 
+
+\ #pragma AVRPART CORE CORE_VERSION V2
+\ #pragma AVRPART CORE NEW_INSTRUCTIONS lpm rd,z+
+
+\  ***** DATA MEMORY DECLARATIONS *****************************************
+0x0000  CONSTANT    FLASHSTART           \  Note: Word address
+0x07FF  CONSTANT    FLASHEND             \  Note: Word address
+0x0010  CONSTANT    FLASHPAGESIZE        \ bytes
+0x0008  CONSTANT    PAGESIZE        \ Words
+0x0040  CONSTANT    FLASHERASESIZE       \ bytes
+0x0020  CONSTANT    ERASESIZE       \ Words
+0x00FF  CONSTANT    IOEND                \ 
+0x0100  CONSTANT    SRAM_START           \ 
+256     CONSTANT    SRAM_SIZE            \ 
+0x01FF  CONSTANT    RAMEND               \ 
+0x00FF  CONSTANT    E2END                \ 
+0x00FF  CONSTANT    EEPROMEND            \ 
+8       CONSTANT    EEADRBITS            \ 
+0x0000  CONSTANT    XRAMEND              \ 
+
+\ #pragma AVRPART MEMORY PROG_FLASH 4096
+\ #pragma AVRPART MEMORY INT_SRAM SIZE 256
+\ #pragma AVRPART MEMORY INT_SRAM START_ADDR 0x100
+\ 
+\ #pragma AVRPART MEMORY EEPROM 256
+
+S" ~iva/AVR/chips/ATtiny441-841.ff" INCLUDED 

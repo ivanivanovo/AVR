@@ -3,9 +3,19 @@
 : AS> ( adr u <name> -- ) \ скопировать данные в текущий сегмент,
     \ запомнить под именем name
     DataType label:
-    DUP 1 AND + \ увеличить до чётного количества байт
-    OVER + SWAP DO I C@ C>Seg LOOP ;
-    
+\    DUP 1 AND + \ увеличить до чётного количества байт
+    OVER + SWAP DO I C@ C>Seg LOOP 
+    fingerAlign
+    ;
+ 
+: str> ( adr u <name> --) \ скопировать данные в текущий сегмент
+    \ как строку со счетчиком
+    DataType label:
+    DUP C>SEG    
+    OVER + SWAP DO I C@ C>Seg LOOP 
+    fingerAlign
+    ;
+
 \ манипуляции с байтами на стеке
 : |4 ( u --b0 b1 b2 b3 ) \ рассыпать число на 4 байта ( младший ниже по стеку)
     WORD-SPLIT SWAP BYTE-SPLIT ROT BYTE-SPLIT 
