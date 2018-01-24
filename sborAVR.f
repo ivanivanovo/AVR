@@ -12,6 +12,14 @@ ALSO DASSM
         GOTO  0 coder 
         R> finger!
     ;  
+: <VECTOR ( <"name_vector"> -- ) \ приписывает вектор с name к текущему адресу (finger)
+    finger >R 0 coder \ R: adr слова на которое укажет вектор
+    finger \ следующий адрес компиляции 
+           BL WORD COUNT EVALUATE finger! \ переход на вектор
+           GOTO R> \ компиляция перехода
+           0 coder
+    finger! \ востановить адрес компиляции 
+    ;
 PREVIOUS  
 : NOADR ( )
     TRUE ABORT" Неверный адрес." ;
@@ -227,5 +235,11 @@ WARNING ON
     DOAFTER> ( Rd Rr --)
     2DUP (SWAP) 2DUP (SWAP) EOR EOR EOR
     ;
+
+: XCHGW ( <"Rd,Rr"> --) \ обменять регистровые пары
+    DOAFTER> ( Rd Rr -- )
+    DUPLET  XCHG XCHG
+    ;    
+
 RESTORE-VOCS        
 

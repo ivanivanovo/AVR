@@ -263,3 +263,14 @@ code Mul16 ( rA rB -- A*B ) \ 16-ти разрядные сомножители,
     ret c;
 
 
+code SetStartVect ( X=startVector --)
+  ldi r,{b SPMEN }
+  ldiW Z,PAGESIZEb  1-
+  begin \ цикл копирования стараницы
+    lpm r1,Z sbiw Z,1
+  while
+    lpm r0,Z  rcall do_SPM \ записать слово 
+    sbiw Z,1
+  repeat
+  movW r0,X rcall do_SPM \ записать слово вектора
+  goto do_WP c; \ стереть и записать страницу

@@ -153,5 +153,5 @@ ROM_FREE DUP createSeg: BOOT-SEG
     CMOVE       \ скопировать
 
 SigLoader .hex .( <--SigLoader) cr
-\ SizeBoot . .( <==== размер чисто загрузчика) cr 
-\ SizeLoader sizePrgWad + . .( <==== полный размер загрузчика) cr
+ SizeBoot . .( <==== размер чисто загрузчика) cr 
+ SizeLoader sizePrgWad + . .( <==== полный размер загрузчика) cr

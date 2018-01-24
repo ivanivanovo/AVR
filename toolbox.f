@@ -418,7 +418,7 @@ WARNING ON
     CREATE  \ выделяем name, создаём статью
         10 WORD     \ выделяем остаток строки 
         DUP C@      \ узнаем размер строк
-        1+ HERE OVER ALLOT \ резервируем место
+        1+ HERE OVER ALLOT ALIGN \ резервируем место
         SWAP CMOVE      \ сохраним строку
         IMMEDIATE       \ новое слово будет немедленным
     DOES> COUNT  EVALUATE  ; \ прочитать строку и выполнить
@@ -435,7 +435,7 @@ WARNING ON
 
 : MACROS ( adr u <name> --) \ запомнить строку под именем name
     \ при исполненни name - выполнить строку
-    CREATE HERE OVER DUP 1+ ALLOT \ резервируем место под строку со счётчиком
+    CREATE HERE OVER DUP 1+ ALLOT ALIGN \ резервируем место под строку со счётчиком
         OVER C!         \ запомним u
         1+ SWAP CMOVE   \ сохраним строку
         IMMEDIATE       \ новое слово будет немедленным
