@@ -1,0 +1,2 @@
+VARIABLE (EPROM!)
+S" defoltEEPROM.f" ' INCLUDED CATCH [IF] 2DROP [THEN] \ если этот файл есть - подключить

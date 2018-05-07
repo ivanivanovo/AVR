@@ -1,0 +1,4 @@
+\ iwbt
+REQUIRE main head
+REQUIRE FindBT iwSerialBT.f
+FindBT [IF]  [ELSE] 500 PAUSE BYE  [THEN]  

@@ -1,0 +1,9 @@
+REQUIRE Boot BootLoader.f
+:NONAME \ (boot)
+    ShowPack @
+    ShowPack Off
+    ['] Boot CATCH SWAP ShowPack ! 
+    THROW
+    ; 
+EXECUTE ( boot)
+\ bye
