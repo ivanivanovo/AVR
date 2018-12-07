@@ -16,8 +16,10 @@ BitsIn SREG
 
 : EXIF; ( ) \ выход по завершению IF
     POSTPONE EXIT POSTPONE THEN ; IMMEDIATE
-: DOAFTER> ( ) \ отложить исполнение до получения параметров
-    R> NEGATE coder ;
+
+\ отложить исполнение до получения параметров
+\ работает только в spf
+[WITHOUT?] DOAFTER> : DOAFTER> ( )  R> 1 coder ; [THEN]
 
 : .1V ( )
    0 BEGIN ['] 1V> CATCH 0= WHILE DUP . SWAP 1+ REPEAT
@@ -83,17 +85,18 @@ SAVE-VOCS ALSO DASSM DEFINITIONS
 \ нижеследующие слова будут работать только в режиме ассемблирования
 
 : SET_B ( "BIT" --) \ установить бит "BIT"=1
-    <BITS DOAFTER> BITS> ADR_BIT 
+    <BITS DOAFTER>  BITS> ADR_BIT 
         OVER   IFREG (SWAP) -fReg (SWAP) bitmaska SBR  EXIF; \ если бит расположен в регистре
         OVER   IFbPORT SBI           EXIF; \ если бит расположен в порту
         (SWAP) IFSREG  BSET          EXIF; \ если бит расположен в SREG
-        NOBIT ;        
+        NOBIT ; 
+
 : CLR_B ( "BIT" --) \ сбросить бит "BIT"=0
-    <BITS DOAFTER> BITS>  ADR_BIT
+    <BITS DOAFTER>  BITS>  ADR_BIT
         OVER   IFREG   bitmaska CBR  EXIF; \ если бит расположен в регистре
         OVER   IFbPORT CBI           EXIF; \ если бит расположен в порту
         (SWAP) IFSREG  BCLR          EXIF; \ если бит расположен в SREG
-        NOBIT ;
+        NOBIT ; 
 
 : _/    SET_B ;
 : \_    CLR_B ;
@@ -109,7 +112,7 @@ SAVE-VOCS ALSO DASSM DEFINITIONS
         OVER   IFREG   BST                            EXIF; \ если бит расположен в регистре
         OVER   IFbPORT CLT SBIC SET                   EXIF; \ если бит расположен в порту
         (SWAP) IFSREG  CLT BRBC finger 4 + SET        EXIF; \ если бит расположен в SREG
-        NOBIT ;
+        NOBIT ; 
 
 : SKIP_B ( "BIT" --) \ пропустить следующую комаду если "BIT"=1
     <BITS DOAFTER> BITS>  ADR_BIT
@@ -122,7 +125,7 @@ SAVE-VOCS ALSO DASSM DEFINITIONS
         OVER   IFREG   SBRC EXIF; \ если бит расположен в регистре
         OVER   IFbPORT SBIC EXIF;  \ если бит расположен в порту
         (SWAP) IFSREG TRUE ABORT" для системных бит команда неприменима." EXIF;
-        NOBIT ;
+        NOBIT ; 
 
 0 VALUE stMark
 : MarkX ( -- adr u ) \ выдать строку внутренней метки от счетчика
@@ -138,7 +141,8 @@ SAVE-VOCS ALSO DASSM DEFINITIONS
     ;
 : (BEGIN) ( V: -- orig ) \ запомнить это место
     \ скомпилировать предыдущую команду
-    DOAFTER> finger 1>V  
+    DOAFTER> 
+    finger 1>V  
     ;    
 : BEGIN ( V: -- orig ) \ запомнить это место и пометить его 
     (BEGIN)  finger ItMark
@@ -146,7 +150,7 @@ SAVE-VOCS ALSO DASSM DEFINITIONS
     
 [FOUND?] JMP 
 [IF]
-: GOTO (  ) \ выбрать между командами ближнего и дальнего перехода.
+: GOTO  (  )  \  выбрать между командами ближнего и дальнего перехода.
     DOAFTER>
     finger OVER - ABS 4095 > IF JMP ELSE RJMP THEN 
     ;
@@ -155,7 +159,7 @@ SAVE-VOCS ALSO DASSM DEFINITIONS
     RJMP ;
 [THEN]
 : AGAIN ( V: -- orig ) \ создать переход на метку
-    DOAFTER> 
+    DOAFTER>
     1V> GOTO ;
  : (pre) ( -- adr) ( V: -- orig )
     \ подготовить переход
@@ -208,11 +212,11 @@ SAVE-VOCS ALSO DASSM DEFINITIONS
 
 : THEN ( V: orign-- )   \ разрешить ссылку вперед   на "сюда" 
     \ скомпилировать предыдущую команду
-    DOAFTER>
+    DOAFTER> 
     finger DUP ItMark  DUP          \ запомнить "сюда" 
            1V> finger!  \ переставить finger
            fingerA W@   \ прочитать что за команда там находится
-           find-opcode operator ! \ подготовить её к повторному исполнения
+           find-opcode 0 2operator 2! \ подготовить её к повторному исполнения
                                   \ с реальным значением
            comby  \ записать команду перехода на "сюда"
     finger! ;           \ восстановить finger
@@ -221,7 +225,7 @@ SAVE-VOCS ALSO DASSM DEFINITIONS
     \ подготовить ссылку вперед   на "туда"
     \ разрешить ссылку вперед   на "сюда"
     \ скомпилировать предыдущую команду
-    DOAFTER>
+    DOAFTER> 
     1V> finger 1>V 1>V \ перестановка маркеров
     GOTO finger  \ заготовка для безусловного перехода на после "THEN"
     THEN   \ разрешение ссылки от предыдущего "IF"

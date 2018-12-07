@@ -37,7 +37,7 @@ DECIMAL
 0x00FF  CONSTANT    IOEND                \ 
 0x0100  CONSTANT    SRAM_START           \ 
 512     CONSTANT    SRAM_SIZE            \ 
-0x01FF  CONSTANT    RAMEND               \ 
+0x02FF  CONSTANT    RAMEND               \ 
 0x01FF  CONSTANT    E2END                \ 
 0x01FF  CONSTANT    EEPROMEND            \ 
 8       CONSTANT    EEADRBITS            \ 

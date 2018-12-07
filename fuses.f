@@ -7,27 +7,26 @@ VARIABLE FdepL  \ для замера глубины
 : LOCK{ ( ) \ начало работы с локами
     LOCK[ DEPTH FdepL ! \ подключить словарь и запомнить текущую глубину стека
     ;
-DEFER [1/0]
-: }=x ( j*x -- ) \ поименованые биты установить/сбросить в [1/0]    
+: }=x ( j*x 1|0-- ) \ поименованые биты установить/сбросить в 1|0    
+    >R
     BEGIN
         DEPTH FdepL @ - 0 >
     WHILE
         label-find DUP
         IF
-            label-value @ [1/0] SWAP B>Seg 
+            label-value @ R@ SWAP B>Seg 
         ELSE
             TRUE ABORT" Неизвестный бит."
         THEN    
     REPEAT    
+    R> DROP
     RESTORE-VOCS  RESTORE-SEGMENT ;
 
-:NONAME 1 ; \ установить младший бит
 : }=1 ( j*x -- ) \ поименованые биты установить в 1    
-    LITERAL IS [1/0] }=x  ;    
+    1 }=x  ;    
 
-:NONAME 0 ; \ обнулить младший бит
 : }=0 ( j*x -- ) \ поименованые биты сбросить в 0    
-    LITERAL IS [1/0] }=x  ;    
+    0 }=x  ;    
 
 : Fuses? ( ) \ показать фузы которые будут записаны
     \ # name = bit    

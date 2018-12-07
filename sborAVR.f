@@ -9,7 +9,7 @@ ALSO DASSM
         finger >R
         (SWAP) finger! 
 \        RJMP  0 coder 
-        GOTO  0 coder 
+        GOTO  0 0 coder 
         R> finger!
     ;  
 : <VECTOR ( <"name_vector"> -- ) \ приписывает вектор с name к текущему адресу (finger)
@@ -17,7 +17,7 @@ ALSO DASSM
     finger \ следующий адрес компиляции 
            BL WORD COUNT EVALUATE finger! \ переход на вектор
            GOTO R> \ компиляция перехода
-           0 coder
+           0 0 coder
     finger! \ востановить адрес компиляции 
     ;
 PREVIOUS  
@@ -41,7 +41,7 @@ SAVE-VOCS ALSO DASSM DEFINITIONS
         BYTE-SPLIT  \ разчленить K на байты
         R> 1+ (SWAP) 
         LDI LDI     \ дважды выполнить загрузку по байту
-    ;
+    ; 
 : CLRW ( <"Rd"> --) \ очистит регистровую пару
     DOAFTER> ( Rd -- )
     DUP CLR 1+ CLR

@@ -75,8 +75,8 @@
 0x001B 2* CONSTANT   USART1_UDREaddr       \  USART1 Data Register Empty
 0x001C 2* CONSTANT   USART1_TXaddr         \  USART1, Tx Complete
 0x001D 2* CONSTANT   TWI_SLAVEaddr         \  Two-wire Serial Interface
-30     2* CONSTANT   INT_VECTORS_SIZE      \  size in bytes
-0x001C 2* CONSTANT   ROM_FREE      \ Стартовый адрес кода    
+31     2* CONSTANT   INT_VECTORS_SIZE      \  size in bytes
+0x0020 2* CONSTANT   ROM_FREE      \ Стартовый адрес кода    
 \  ***** I/O REGISTER DEFINITIONS *****************************************
 \  NOTE:
 \  Definitions marked "MEMORY MAPPED" are extended I/O ports

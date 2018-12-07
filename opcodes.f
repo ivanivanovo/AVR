@@ -150,7 +150,7 @@ DEFER coder
         0 BEGIN next-op WHILE save-op 1+ REPEAT DROP  \ запись операндов
         2 SWAP - \ скольких нет?
           BEGIN DUP 0 > WHILE -op 1- REPEAT DROP  \ запись отсутствующих 
-    DOES>  coder
+    DOES> 0 coder \ истинный оператор (с опкодом)
     ; 
 : Opcode: ( "bits-symbols" -- )  \ разобрать код операции на составляющие
     BL WORD COUNT \ adr u 

@@ -247,7 +247,7 @@ PozLabel SizeAreaLabel + VALUE PozMnemo
 : LISTING ( --) \ дизассемблировать всё
     0 wender [LIST]
     ;
-
+\eof
 : see ( val -- ) \ показать ассемблер
     FALSE TO AddrOpcode?
     PozLabel PozMnemo
