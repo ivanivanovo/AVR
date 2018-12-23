@@ -136,7 +136,7 @@ VARIABLE opcodes    \ начало цепного списка opcodes
     ;
 
 \ ======== ГЛАВНЫЕ СЛОВА =======================================================
-DEFER coder  
+[WITHOUT?] coder DEFER coder  [THEN]
 
 : cmd: ( <"name" text;> --) 
     >IN @ 

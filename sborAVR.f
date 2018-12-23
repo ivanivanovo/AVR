@@ -113,7 +113,7 @@ SAVE-VOCS ALSO DASSM DEFINITIONS
     DUP 1+ (SWAP) ROL ROL
     ;    
 
-WARNING OFF
+WARNING @ WARNING OFF
 [WITH?] LDS \ вариант при наличии LDS и STS
 : IN ( <"Rd Port"> --) \ в зависимости от адреса порта скомпилировать
     \ команду IN, MOV или LDS
@@ -212,7 +212,7 @@ WARNING OFF
 
 : MOVW 2MOV ;
    
-WARNING ON
+WARNING !
 
 [WITH?] PUSH \ если есть PUSH и POP
 : PUSHW ( <"RegL"> ---) \ сохранить на стеке пару регистров

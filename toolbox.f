@@ -111,10 +111,10 @@ DECIMAL
     DUP >R overS? OVER @ OVER + >R
     CMOVE
     R> R@ ! R> S ! ;
-WARNING OFF
+WARNING @ WARNING OFF
 : S@ ( --- adr u) \ выдать реквизиты строки в s-стеке
     S @ DUP @ SWAP OVER - DUP emptyS? SWAP ;
-WARNING ON
+WARNING !
 
 : S+S ( -- ) \ склеить строку в s-стеке с предыдущей строкой 
      S@ OVER CELL- DUP emptyS? S ! ( adr u )
@@ -307,7 +307,7 @@ S" ~iva/AVR/KOI8-R.f" INCLUDED
 \ S" ~iva/AVR/WIN1251.f" INCLUDED
 \ S" ~iva/AVR/CP866.f" INCLUDED
 
-WARNING OFF
+WARNING @ WARNING OFF
 : CHAR-UPPERCASE ( c -- c1 ) 
 \ подмена однобайтного символа версией верхнего регистра
   \ для правильной работы с символами не ASCII
@@ -325,7 +325,7 @@ WARNING OFF
     I C@ CHAR-UPPERCASE I C!
   LOOP ;
 
-WARNING ON
+WARNING !
 
 : CASE^ ( adr u --) \ перевести строку в верхний регистр
     UPPERCASE \ НЕ работает с русскими в UTF8
@@ -406,7 +406,7 @@ VARIABLE CurVoc
 \ при каждом вызове этого слова выдается новое значение на 1 больше предыдущего
     CREATE , DOES> DUP @ SWAP 1+!  ;
 
-WARNING OFF
+WARNING @ WARNING OFF
 : str! ( adr u --) \ поместить строку, как строку со счётчиком по HERE
     -TRAILING \ обрезать хвостовые пробелы
     HERE >R  
@@ -414,16 +414,13 @@ WARNING OFF
     DUP R@ C! \ a u
     R> 1+ SWAP  CMOVE 
     ;
-WARNING ON
+WARNING !
 
 
 : #def ( <name строка.... > -- ) \ запомнить строку под именем name
     \ при исполненни name - выполнить строку  
     CREATE  \ выделяем name, создаём статью
-        10 WORD     \ выделяем остаток строки 
-        DUP C@      \ узнаем размер строк
-        1+ HERE OVER ALLOT ALIGN \ резервируем место
-        SWAP CMOVE      \ сохраним строку
+        10 PARSE str!   \ выделяем и сохраняем остаток строки 
         IMMEDIATE       \ новое слово будет немедленным
     DOES> COUNT  EVALUATE  ; \ прочитать строку и выполнить
 

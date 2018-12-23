@@ -157,7 +157,8 @@ CONSTANT termios \ общий размер структуры
 #def 	TCSAFLUSH	2   \ Flush input and output buffers and make the change\ tcsetattr uses these 
 
 
-0 value fd \ файловый дескриптор
+0 value fd  \ файловый дескриптор
+VARIABLE _fd \ временный дескриптор
 termios ALLOCATE THROW VALUE options \ взяли память из кучи под один экземпляр termios
 
 : |  POSTPONE LITERAL  ['] OR COMPILE, ; IMMEDIATE
@@ -165,6 +166,8 @@ termios ALLOCATE THROW VALUE options \ взяли память из кучи п�
 
 : iniCom ( adr u baud -- ) \ открыть порт, на нужной скорости, режим - raw
     -ROT R/W OPEN-FILE THROW TO fd
+    fd _fd ! 
+    fd 100 > if (( fd )) fileno to fd then
     (( fd options )) tcgetattr THROW
     DUP 1 <( options  SWAP )) cfsetispeed  THROW
         1 <( options  SWAP )) cfsetospeed  THROW
@@ -185,6 +188,7 @@ termios ALLOCATE THROW VALUE options \ взяли память из кучи п�
         0 options c_cc VTIME  + C! \ время ожидания символов 0/10 сек
         0 options c_cc VMIN   + C! \ минимальное число символов 0
     (( fd TCSANOW options )) tcsetattr THROW
+    _fd @ TO fd
     ;
 \ S" /dev/ttyUSB0" 15 iniCom \ открыть на скорости 38400
 \ S" /dev/ttyUSB2" B38400 iniCom \ открыть на скорости 38400

@@ -1,7 +1,7 @@
 DECIMAL
 CR
 \ ======== система команд микропроцессора ======================================
-[FOUND?] WARNING [IF] WARNING OFF [THEN]
+[FOUND?] WARNING [IF] WARNING @ WARNING OFF [THEN]
 FALSE VALUE LowFirstRW \ младший байт читается И записывается первым
 \ этот флаг TRUE для xMega
 0 CONSTANT ISPprog
@@ -54,7 +54,7 @@ S" ~iva/AVR/chips/" >S \ где искать файлы описания мик�
 
 0 EMIT>S S@  INCLUDED S>DROP \ добавляем ноль в конец, загрузим файл
 LABELS> CR
-[FOUND?] WARNING [IF] WARNING ON [THEN]
+[FOUND?] WARNING [IF] WARNING ! [THEN]
 <DASSM
     :NONAME ( -- ) \ очистка векторов прерываний
         0 ORG \ finger!

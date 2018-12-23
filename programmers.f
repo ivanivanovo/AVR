@@ -3,9 +3,9 @@
 \ найти подключенные,
 \ а среди них, тех что с чипом
 \ и если сигнатура чипа совпадает с целевой - прошить его
-WARNING OFF
+WARNING @ WARNING OFF
     [WITHOUT?] MARKER S" lib/include/core-ext.f" INCLUDED [THEN]
-WARNING ON
+WARNING !
 
 \ переменные для кусковой записи
 \ если они не определны (=0), то пишется все что есть
