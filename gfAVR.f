@@ -1,7 +1,9 @@
 \ запуск forth-assembler через qforth 0.7.9
+\ символическую ссылку на этот файл положи в ~/.config/под именем gforth0
+\ тогда gforth сам его найдет и прицепит ДО выполнения остальной части команды
 warnings CONSTANT WARNING
 WARNING OFF
-\ sh rm -rf ~/.cache/gforth/386/libcc-tmp
+\ sh rm -rf ~/.cache/gforth/386/libcc-tmp \ включать если требуется обновление с-библиотек
 \ ================ Системные функции  =========================================
 \ требуется доустановить libtool
 \ sudo apt-get install libtool-bin
@@ -72,7 +74,13 @@ c-library libUSB
         \ int LIBUSB_CALL libusb_get_active_config_descriptor(libusb_device *dev,
         \ struct libusb_config_descriptor **config);
         c-function libusb_get_active_config_descriptor libusb_get_active_config_descriptor a a -- n
+        \ int LIBUSB_CALL libusb_set_auto_detach_kernel_driver(libusb_device_handle *dev, int enable);
+        c-function libusb_set_auto_detach_kernel_driver libusb_set_auto_detach_kernel_driver a n -- n
+        \ int LIBUSB_CALL libusb_claim_interface(libusb_device_handle *dev,int interface_number);
+        c-function libusb_claim_interface libusb_claim_interface a n -- n
+
 end-c-library
+
 : USE BL WORD DROP ;
 : (( ; 
 : )) ;  
@@ -128,34 +136,47 @@ REQUIRE unix/pthread.fs
 \ ================ NOTFOUNDS ==================================================
 
 \ ================ Пути поиска файлов =========================================
-0 VALUE LenDir
-CREATE CurDir 200 ALLOT
+CREATE CurDir    255 ALLOT \ абсолютный путь
+CREATE RootPoint 255 ALLOT \ точка для относительных путей
+CREATE FASMpoint 255 ALLOT \ точка подключения forth-assembler
+
 : COUNTZ ( adr -- adr u) \ размер строки с нулем на конце
     0 BEGIN 2DUP + C@ WHILE 1+ REPEAT 
     ;
-get_current_dir_name COUNTZ  TO LenDir CurDir LenDir CMOVE \ выяснить текущий путь
-CHAR / CurDir LenDir + C! LenDir 1+ TO LenDir \ закрыть его слешем
+
+get_current_dir_name COUNTZ  CurDir C! CurDir COUNT CMOVE \ выяснить текущий путь
+CHAR / CurDir COUNT + C! CurDir COUNT 1+ SWAP 1- C! \ закрыть его слешем
+
 : CurDir+ ( adr u -- adr' u') \ добавить строку к текущему пути
-    >R CurDir LenDir + R@ CMOVE
-    CurDir LenDir R> +
+    >R CurDir COUNT + R@ CMOVE
+    CurDir COUNT R> +
     ;
 : with ( adr u  --) \ добавить путь поиска к остальным
     fpath also-path
     ;
 
-S" ~/spf-4.21/devel/~iva/AVR" with
+    CurDir COUNT TUCK S" beq/" SEARCH 
+    [IF] \ проект beq/ 
+        NIP - RootPoint C! 
+        CurDir 1+ RootPoint COUNT CMOVE 
+        RootPoint COUNT FASMpoint C!
+                  FASMpoint COUNT CMOVE
+        S" beq/libs/fasm/" 
+    [ELSE] \ прочие
+        S" ~/spf-4.21/devel/"  
+    [THEN] TUCK FASMpoint COUNT + SWAP CMOVE
+        FASMpoint COUNT ROT + SWAP 1- C!
 
-: INCLUDED ( adr u -- )
+: INCLUDED ( adr u -- ) \ 
     OVER DUP C@ [CHAR] ~ =
     SWAP 1+  C@ [CHAR] / = 0= AND
-    if  S" ~/spf-4.21/devel/" DUP >R PAD SWAP CMOVE
+    if  FASMpoint COUNT DUP >R PAD SWAP CMOVE
         R@ PAD + SWAP DUP R> + >R CMOVE
         PAD R>
     then
-\    CR 2dup  ." ===>" type ." <===  " 
     INCLUDED
-\    ." WARNING="  WARNING @ .
     ;
+
 : REQUIRE ( "word" "file_name" -- ) \ если нету word, подключить file_name
     BL WORD FIND NIP \ поискать word
     IF BL WORD DROP EXIT THEN \ есть - употребить file_name

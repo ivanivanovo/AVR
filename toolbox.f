@@ -448,3 +448,21 @@ WARNING !
 \ 4 6 сложить
 
 
+: (DUMP) ( adr u -- ) \ распечатать дамп в заданых границах 
+    \ с выровненными адресами
+    ?DUP IF
+        HEX[
+            OVER + SWAP \ отображаемые адреса
+            2DUP 
+            -16 AND
+            DO
+                I 255 AND 0= IF CR THEN
+                I 15  AND 0= IF CR I . SPACE THEN
+                I 3   AND 0= IF ."  " THEN
+                2DUP I -ROT BETH
+                IF I C@ 2 .0R SPACE ELSE ." -- " THEN
+            LOOP 2DROP
+        ]HEX
+    ELSE DROP ." Пусто." 
+    THEN CR
+    ;

@@ -50,6 +50,7 @@ UBuf szUBuf  0 fill \ очистка буфера
     (( hand EPout UBuf Tred @  Tred USB_TIMEOUT )) libusb_bulk_transfer  errorusb \ передать 
     \ нулевой завершающий пакет, если нужно
     Tred @ EPoutSize mod 0= if (( hand EPout UBuf 0 Tred USB_TIMEOUT )) libusb_bulk_transfer  errorusb then 
+ 1 pause  \ ХЗ?, но помогает от ошибок, когда программатор подключен через внешний хаб, 
     (( hand EPin  UBuf szUBuf  Tred USB_TIMEOUT )) libusb_bulk_transfer  errorusb \ принять
     ;
 
@@ -69,8 +70,8 @@ UBuf szUBuf  0 fill \ очистка буфера
 
 
 \ осуществить программирование
-ProgInterface ISPprog = [IF] S" ~iva/AVR/ISPprog.f" INCLUDED [THEN]
-ProgInterface PDIprog = [IF] S" ~iva/AVR/Xprog.f"   INCLUDED [THEN] 
+ProgInterface ISPprog = [IF] S" ISPprog.f" INCLUDED [THEN]
+ProgInterface PDIprog = [IF] S" Xprog.f"   INCLUDED [THEN] 
 
 AVRISP_mk2_Vid AVRISP_mk2_Pid findUSBprog
 EndedLoop <>

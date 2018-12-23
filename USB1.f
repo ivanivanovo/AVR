@@ -120,8 +120,7 @@ CREATE ListDevs 16 CELLS ALLOT   \ мешок искомых устройств
     IF  (( hand )) libusb_close errorUSB  THEN \ закрыть
     ;
 
-( jjjiikk;
- ) 
+
 : findUSBprog ( vid pid -- err) \ ищет USB-програматоры
     0 -ROT \ код завершения по умолчанию
     VPid 2!
@@ -167,7 +166,8 @@ CREATE ListDevs 16 CELLS ALLOT   \ мешок искомых устройств
 (( dev &hand )) libusb_open errorUSB \ открыть 
 (( 0 devs &hand )) libusb_open errorUSB \ открыть из мешка
 (( hand  0 )) libusb_kernel_driver_active tickErr . \ проверить наличие системного драйвера на интерфейсе 0
-(( hand true )) libusb_set_auto_detach_kernel_driver errorUSB \ автоотключение-подключение системного драйвера
+(( hand true )) libusb_set_auto_detach_kernel_driver errorUSB \ разрешить автоотключение-подключение системного драйвера
+(( hand 0 )) libusb_claim_interface errorUSB \ захватить интерфейс, если разрешено - отключится драйвер ядра
 
 (( hand )) libusb_reset_device errorUSB
 
@@ -176,6 +176,6 @@ CREATE ListDevs 16 CELLS ALLOT   \ мешок искомых устройств
 
 (( hand )) libusb_close errorUSB \ закрыть
 
-(( list )) libusb_free_device_list .
+(( listDev )) libusb_free_device_list .
 
 (( ctx )) libusb_exit .
