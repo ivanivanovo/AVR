@@ -13,7 +13,7 @@ ALSO DASSM
         R> finger!
     ;  
 : <VECTOR ( <"name_vector"> -- ) \ приписывает вектор с name к текущему адресу (finger)
-    finger >R 0 coder \ R: adr слова на которое укажет вектор
+    finger >R 0 0 coder \ R: adr слова на которое укажет вектор
     finger \ следующий адрес компиляции 
            BL WORD COUNT EVALUATE finger! \ переход на вектор
            GOTO R> \ компиляция перехода

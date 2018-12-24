@@ -466,3 +466,15 @@ WARNING !
     ELSE DROP ." Пусто." 
     THEN CR
     ;
+
+[NOT?] sh
+[IF]
+: sh ( "cmd" -- ) \ выполнить команду оболочки
+    10 PARSE OVER + 0 SWAP C! 1 <( )) system THROW     ; 
+[THEN]
+
+[NOT?] mkdir
+[IF]
+: mkdir ( "dir" --)
+    10 PARSE OVER + 0 SWAP C! 1 <( 511 )) mkdir THROW ; \ 511 = 0777
+[THEN]

@@ -37,6 +37,10 @@ c-library forAVR
         c-function cfsetispeed cfsetispeed a n -- n
         \ int cfsetospeed(struct termios *termios_p, speed_t speed); 
         c-function cfsetospeed cfsetospeed a n -- n
+    \c #include <sys/stat.h>
+    \c #include <sys/types.h>
+        \ int mkdir(const char *pathname, mode_t mode);
+        c-function mkdir mkdir a n -- n
 end-c-library
 
 
