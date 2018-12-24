@@ -163,6 +163,7 @@ CHAR / CurDir COUNT + C! CurDir COUNT 1+ SWAP 1- C! \ закрыть его сл
                   FASMpoint COUNT CMOVE
         S" beq/libs/fasm/" 
     [ELSE] \ прочие
+        2DROP DROP
         S" ~/spf-4.21/devel/"  
     [THEN] TUCK FASMpoint COUNT + SWAP CMOVE
         FASMpoint COUNT ROT + SWAP 1- C!
