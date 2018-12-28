@@ -2,13 +2,16 @@
 [NOT?] ESC> [IF] S" console_codes.f" INCLUDED [THEN]
 [NOT?] 2VARIABLE [IF] S" lib/include/double.f" INCLUDED [THEN]
 
-0 VALUE OnBoot  \ начало загружаемой области
-0 VALUE OffBoot \ конец загружаемой области
-8 CONSTANT WDatMax \ максимальный размер пакета данных, четное, [2..10]
-
+4 CONSTANT WDatMax \ максимальный размер пакета данных, в словах
+2VARIABLE fprgWad   \ adr u полученного пыжа, u используется как флаг
+VARIABLE fNewBoot   \ флаг необходимости сменить загрузчик 
+0 VALUE fidext \ fileid файла сценария
+0 VALUE OldSig \ старая сигнатура
 \ ==================== либы ==========================================================
 
 \ =============== система программирования ===================================
+: (B>W) ( ofs -- ofsW) 2/ ; \ перевод байтов в слова
+: (W>B) ( ofsW -- ofs) 2* ; \ перевод слов в байты
 
 \ структура для сборки пакета программирования
 0
@@ -17,208 +20,443 @@
 1 -- ZLpoint    \ адрес записи младший байт
 1 -- ZHpoint    \ адрес записи старший байт
 1 -- ZEpoint    \ адрес записи дополнительный старший байт
-WDatMax -- Wdat \ WDatMax байт данных
+WDatMax (W>B) -- Wdat \ WDatMax*2  байт данных
 CONSTANT StructPrg
 
+
 DEFER Boot> ( adr u --) \ отправка пакета
+\ ' xBoot> IS Boot> \ по умолчанию используется из iwLink.fs
+\ ' Boot>. IS Boot> \ для тестирования протокола программирования
+{b fVec } CONSTANT bVec
+{b fRst } CONSTANT bRst
+{b fWrt } CONSTANT bWrt
+{b fXor } CONSTANT bXor
 
-
-: Boot>. ( adr u --) \ показка пакетов
-    OVER  C@ ." prg: " HEX[ 2 .0R ]HEX ." | " \ prg
-    OVER  1+ C@ \ cmd
-    DUP [ {b fRst } ] LITERAL AND IF ." r" ELSE ." ." THEN
-    DUP [ {b fWrt } ] LITERAL AND IF ." w" ELSE ." ." THEN
-        [ {b fMsk } ] LITERAL AND IF ." s" ELSE ." ." THEN
-    ." | "
-    2 /STRING
-    0 -ROT
-    OVER + SWAP 
-    DO I C@ HEX[ 2 .0R ]HEX SPACE
-       DUP 2 = IF ." |" SPACE THEN
-       1+
-    LOOP DROP
-    CR
+: Boot>. ( adr u --) \ показка пакетов 
+    HEX[ 
+        OVER  C@ DUP 2 ,0R >S
+        DUP prgVsig = 
+        IF DROP ." sig: " S@ TYPE ." | " DROP cmd @ 8 .0R  ELSE
+            DUP prgUID  = 
+            IF DROP ." uid: " S@ TYPE ." | " DROP cmd @ 8 .0R  ELSE
+                prgCMD01 =
+                IF ." prg: " S@ TYPE ." | "  \ prg
+                    OVER  cmd C@ \ cmd
+                    DUP bVec AND IF ." v" ELSE ." ." THEN
+                    DUP bRst AND IF ." r" ELSE ." ." THEN
+                    DUP bWrt AND IF ." w" ELSE ." ." THEN
+                        bXor AND IF ." x" ELSE ." ." THEN
+                    ." | "
+                    2 /STRING
+                    OVER @ 0xFFFFFF AND ." 0x" 6 .0R ."  |" SPACE
+                    3 /STRING
+                    OVER + SWAP 
+                    ?DO I C@  2 .0R  SPACE    LOOP
+                ELSE 2DROP
+                THEN
+            THEN
+        THEN
+        S>DROP 
+    ]HEX CR
     ;
-
-2VARIABLE fprgWad \ adr u полученного пыжа, u используется как флаг
-: 2off ( adr --) \ обнулить двойную переменную
-    0 0 ROT 2!
-    ;
-: 2on ( adr --) \ установить двойную переменную
-    -1 -1 ROT 2!
-    ;
-fprgWad 2off
+' Boot>. is Boot> \ показать пакеты программирования
 
 : WaitPrgWad ( --) \ ждать пыжика от программируемого чипа
     fprgWad @ IF exit THEN \ не ждать
-    getMs \ засечь время
+    getMs 2000 + \ засечь время
     begin \ контроль времени ожидания
-        getMs OVER 300 + <
-    while
-        fprgWad 2@ \ проверить получение
-        sizePrgWad = IF DUP THEN
-        until
-        1+ W@ 
-        SigLoader <> ABORT" Требуется замена загрузчика!"
-        fprgWad 2off  \ погасить его
-        ." ." \ показать получение
-    else ABORT" Нет ответа!"
-        then DROP
+        getMs OVER  > ABORT" нет ответа"
+        fprgWad @ \ проверить получение
+        2 PAUSE
+    until
+    DROP
+    fprgWad 2@ DROP
+    1+ W@ SigLoader <>  fNewBoot !
+    0 0 fprgWad 2!  \ погасить его
+    ." ." \ показать получение
     ;
 
-: Boot[ ( --) \ пометить начало загружаемой области
-    finger TO OnBoot
+: xBoot> ( adr u --) \ отправка пакета
+    \ по умолчанию используется поключенный интерфейс (UART,USB)
+     >FIFO 
+    \ OutPacks SFIFO! 
+    WaitPrgWad \ ждать пыжика от программируемого чипа
     ;
-: ]Boot ( --) \ пометить конец загружаемой области    
-    finger TO OffBoot
+ ' xBoot> IS Boot>
+
+ 
+
+: Boot>f ( adr u -- ) \ отправить пакет программирования в файл
+    fidext 
+    IF  fprgWad @ IF S" x" ELSE S" w" THEN  >S \ новая строка
+        OVER prgS C@ prgCMD01 =
+        IF  OVER cmd C@
+            bWrt AND IF [CHAR] p S@ DROP C! THEN
+        THEN
+        OVER + SWAP ?DO I C@ HEX[ 2 ,0R ]HEX +>S LOOP
+        S@ fidext WRITE-LINE THROW S>DROP 
+    ELSE 2DROP
+    THEN
     ;
 
-: +fcmd ( fMask --) \ установить флаги в команде
-    S@ DROP cmd DUP C@ \ fMask adr cmd
-    ROT OR SWAP C!
-    ;
 
-: adrZ! ( adr -- ) \ установить адрес
-    |3 ROT EMIT>S SWAP EMIT>S EMIT>S
-    ;
-0 VALUE defoltCMD
-: [Boot]? ( adr --f) \ проверка попадания adr внутрь загружаемой области
-    OnBoot OffBoot 1- BETH
-    ;
-: filling? ( adr src n -- f) \ продолжать заполнение?
-    WDatMax < \ adr src f' \ 
-    IF ( adr src) OVER [Boot]? =
-        IF ( adr) PAGESIZEb MOD ELSE DROP FALSE THEN
-    ELSE 2DROP FALSE THEN
-    ;
-: PackFill ( adr --adr' n ) \ пакет заполнения
-    DUP [Boot]? >R \ adr   R:(src)
-    0
-    BEGIN  \ adr n
-        R@ IF OVER SegA C@ ELSE [ {b fMsk } ] LITERAL +fcmd 0 THEN \ adr n b
-        EMIT>S
-        1+ SWAP 1+ SWAP \ adr+1 n+1
-        OVER PAGESIZEb MOD 0= IF [ {b fWrt } ] LITERAL +fcmd THEN \ записать заполненную страницу
-        \ условие
-        2DUP R@ SWAP filling?
-    WHILE \ пока mod(adr), src-неизменился
-    REPEAT 
-    R> DROP 
-    \ adr' n 
-    ;
-
-: HeadPack>S ( --) \ шапка пакета программирования
+: packBoot[ ( adr cmd --) \ шапка пакета программирования
     NEW>S
     prgCMD01 EMIT>S
-    defoltCMD EMIT>S
-    ;
-: Pages! (  --) \ записать все страницы
-    \ выровнять загружаемую область по страницам
-    OnBoot PAGESIZEb / PAGESIZEb * \ adrPstart
-    OffBoot PAGESIZEb /mod SWAP IF 1+ THEN PAGESIZEb * \ adrPstart adrPend
-    OVER - \ adr0 u
-    \ adr0 выровнен на начало первой страницы
-    \ u кратно PAGESIZEb
-    BEGIN DUP WHILE \ пока есть данные
-        HeadPack>S \ шапка пакета
-        OVER adrZ!
-        \ тело пакета
-        \ adr u
-        SWAP PackFill \ u adr' n
-        ROT SWAP - \ adr' u'  
-        fprgWad 2off \ что-б ждал пыжика
-        S@ Boot> S>DROP \ отправка пакета
-    REPEAT
-    2DROP 
+    EMIT>S
+    |3 ROT EMIT>S SWAP EMIT>S EMIT>S
     ;
 
+: ]packBoot ( f -- ) \ завершение и отправка пакета
+    \ f=true ждать ответного пыжа
+    \ f=false не ждать ответного пыжа
+    0= DUP fprgWad 2!
+    S@  Boot>   S>DROP  \ отправка пакета
+    ;
 : PingBoot ( -- ) \ проверочный пакет программатора
-    0 TO defoltCMD \ простая запись
-    HeadPack>S 0 adrZ!
-    fprgWad 2off \ что-б ждал пыжика
-    S@ Boot>   \ отправка пакета
-    S>DROP 
-    ;
-: [Vect] ( --) \ загрузка области векторов
-    OnBoot OffBoot
-            0 TO OnBoot ROM_FREE TO OffBoot
-            ['] Pages! CATCH -ROT
-    TO OffBoot TO OnBoot 
-    THROW
-    ;
-: [VBoot] ( --) \ загрузка векторов загрузчика
-    SEG  
-        BOOT-SEG TO SEG [Vect]
-    TO SEG
-    ;
-: [Boot] ( -- ) \ загрузка помеченной области 
-    Pages! 
+    0 0 packBoot[  \ простая запись
+    TRUE ]packBoot \ что-б ждал пыжика
     ;
 
 : GoBoot ( adr --) \ выход из загрузчика по adr
-    defoltCMD >R
-        [ {b fRst } ] LITERAL TO defoltCMD
-        HeadPack>S 
-        2/ adrZ!
-        fprgWad 2on \ что-б не ждал пыжика
-        S@ Boot> S>DROP \ отправка пакета
-    R> TO defoltCMD
+    (B>W) bRst packBoot[ 
+    FALSE ]packBoot \ что-б не ждал пыжика
     ;    
 
-: Boot! ( --) \ полная загрузка
-    \ проверить активности загрузчик в чипе
-    PingBoot 
-    CR
-    \ проверить пересечение с критической областью
-    crtBootA OnBoot OffBoot BETH
-    crtBootB OnBoot OffBoot BETH
-    OR ABORT" В загружаемой области находится критический код загрузчика!"
-    \ загрузка
-    OffBoot OnBoot - 
-    S" [35m" ESC>
-    ." ************************************" CR
-    ." *             Booting!             *" CR
-    ." * Размер для загрузки: " 5 .R ."  байт. *" CR
-    ." ************************************" CR
-    0 TO defoltCMD \ простая запись
-    [VBoot] CR \ вектора загрузчика
-    [Boot]  CR \ загрузка помеченной области 
-    [Vect]  CR \ вектора основной программы
-    ." *************** END ****************" CR
-    defoltText
-\ не всегда корректно идти на 0
-\    0 GoBoot \ переход на основную программу
+
+0 1 KB createSeg: Img-SEG \ сегмент образа прошивки чипа
+: Img[ SAVE-SEGMENT Img-SEG TO SEG ;
+: ]Img RESTORE-SEGMENT ;
+: ImgWender ( -- b) Img[ wender ]Img ;
+
+0 1 KB createSeg: Msk-SEG \ сегмент маски образа
+\ если по смещению (в словах) в маске FALSE - данных в образе нет
+\ если по смещению (в словах) в маске TRUE  - данным в образе можно верить
+: Msk[ SAVE-SEGMENT Msk-SEG TO SEG ;
+: ]MSK RESTORE-SEGMENT ;
+
+: Discount ( ofsW u -- ofsW' u') \ сравнить текущий сегмент с образом
+    \ ofsW' u' остаток строки с первым не совпадающим словом в начале
+    BEGIN 
+        OVER (W>B) ImgWender  ( ..ofs wender' )
+        DUP 0> -ROT > 0= AND \ wender>0 И ofs НЕ больше wender  
+        OVER  0> AND \ И u>0 
+        IF  \ получить и сравнить слова
+            OVER (W>B) DUP 
+            segA  W@
+            SWAP Img[ segA W@ ]Img
+            =
+        ELSE FALSE THEN
+    WHILE \ пока сравнимы И одинаковы
+        1 /STRING \ перйти к следующему слову
+    REPEAT
     ;
+
+: FindImgBoot ( VerSign -- ) \ поиск и загруза образа старой прошивки
+    Pref >S 2 HEX[ ,R ]HEX +>S Suff +>S 0 EMIT>S S@
+    R/O OPEN-FILE 
+    if DROP Img[ 0 Seg-wender ! ]Img \ образа нет, прямая загрузка
+       Msk[ 0 SegA SEG-SIZE @ FALSE FILL ]Msk \ очистить маску
+    else \ есть образ, разностная загрузка
+        CLOSE-FILE THROW
+        Img[ S@ LOAD-AS-HEX wender (B>W) 1- ]Img
+        Msk[ DUP org TRUE C>SEG \ расширить маску
+             0 SegA SWAP TRUE FILL \ заполнить маску
+            ]Msk 
+    then S>DROP
+    ;
+
+: CreateNewDext ( VerSign -- fid ) \ поиск и загрузка сценария прошивки
+    Pref >S 
+        2 HEX[ ,R ]HEX +>S
+            S" to" +>S
+                VSign 2 HEX[ ,R ]HEX +>S
+                    S" .dext" +>S
+                        0 EMIT>S 
+    S@ R/W CREATE-FILE THROW  \ создать новый файл
+    S>DROP
+    ;
+
+
+80 CONSTANT SizePackLine
+SizePackLine ALLOCATE THROW CONSTANT packLine \ приемная строка пакетов
+: PlayDext ( fid -- )
+    BEGIN
+        DUP packLine SizePackLine ROT
+        READ-LINE THROW 
+    WHILE
+        packLine SWAP \ adr u
+        DUP 
+        IF  OVER C@ >R 1 /STRING
+            R@ [CHAR] t = 
+            IF 0 S>D 2SWAP >NUMBER 2DROP D>S ." PAUSE " DUP . PAUSE CR
+            ELSE  FALSE   
+                R@ [CHAR] x =  R@ [CHAR] s = OR 
+                OR  DUP fprgWad 2!
+                R@ [CHAR] x =
+                R@ [CHAR] w = OR
+                R@ [CHAR] p = OR
+                R@ [CHAR] s = OR 
+                IF  Hex2Bin Boot> 
+                ELSE 2DROP 
+                THEN
+            THEN
+            R> DROP
+        ELSE 2DROP    
+        THEN
+    REPEAT
+    2DROP 
+    ;
+\ S" hex/palf-10DB4056to10095260.dext" R/O open-file throw  playdext
+
+: PgBegin ( ofsW -- ofsW0 u) \ выравнивает смещение на начало страницы
+    \ u - слов до ofsW
+    PAGESIZE /mod  PAGESIZE * SWAP
+    ;
+: PgEnd ( ofsW -- ofsW u) \ слов до конца страницы
+    DUP
+    PgBegin NIP PAGESIZE SWAP - 
+    ;
+
+
+\ ==========================================================
+FALSE VALUE pseudo \ флаг псевдозаписи
+
+: getWord ( ofsW -- w cmd ) \ получить слово и команду для его корректной записи
+    pseudo 
+    IF DROP 0 bXor \ псевдозапись, страница не изменяется
+    ELSE \ реальная запись   
+        DUP wender (B>W) < 0=
+        IF DROP 0 bXor ELSE
+            DUP (W>B) SegA W@ 
+\            OVER Img[ wender (B>W) ]Img < 0=
+            OVER Msk[ \ проверить наличие данных в образе, по маске 
+                org ['] Seg>C CATCH IF FALSE THEN ]Msk 
+            0=
+            IF NIP 0
+            ELSE SWAP (W>B) ( ..w  imgAdr)
+                Img[ segA W@ ]Img  ( w w')  
+                XOR bXor
+            THEN
+        THEN
+    THEN
+    ;
+
+: Word>S ( w --) |2 SWAP EMIT>S EMIT>S ;
+: cmdA ( -- adr_cmd) \ получить адрес текущей команды
+    S@ DROP cmd 
+    ;
+: Wrd2Imd ( ofsW -- ) \ копировать слово из текщего сегмента в образ
+    pseudo IF DROP ELSE \ ничего не делать
+    DUP Msk[ org TRUE C>SEG ]Msk \ отметить факт записи в маске образа
+    (W>B) DUP segA W@ \ получить оригинал
+    SWAP Img[ org W>SEG ]Img  \ записать в образ
+    THEN
+    ; 
+
+: [Pack] ( ofsW u -- u1) \ сделать пакет программирования 
+    \ u <=WDatMax
+    DUP >R \ R:u1=u
+    DUP
+    IF  OVER DUP getWord >R  SWAP (W>B) R> 
+        packBoot[ \ начать пакет
+            BEGIN \ ofsW u w
+                Word>S  \ дополнить пакет
+                OVER Wrd2Imd \ заменить слово в образе
+                1 /STRING \ ofs u
+                OVER PAGESIZE mod  0= IF cmdA C@ bWrt OR cmdA C! THEN
+                OVER getWord  \ ofs u w c
+                cmdA C@ = \ ofs u w f
+                >R OVER R> AND 0= \ выполнять пока не измениться команда 
+                \ или не кончатся слова
+            UNTIL DROP 
+        TRUE ]packBoot \ отправить пакет
+    THEN ( ofsW' u') NIP R> SWAP - 
+    ;
+\ ==========================================================
+: (PgLoad) ( ofsW u -- ofsW+u 0   )
+    DUP IF  2DUP WDatMax MIN  [Pack]
+            /STRING RECURSE 
+        THEN 
+    ;
+: PgLoad ( ofsW u f-- ) \ загрузка одной страницы, u<=PageSize
+    0= TO pseudo
+    (PgLoad) 2DROP
+    ;
+
+: [Page] ( #Page -- ) \ запись целой страницы
+    PAGESIZE *  PAGESIZE \ ofsW u
+    TRUE PgLoad
+    ;
+
+: SetStartVector ( vect cmd f --) \ установка стартового вектора
+    >R \ флаг указывает как переписывать остальное векторное поле
+    \ FALSE - не переписывать, оставить как есть
+    \ TRUE  - привести в соответствие с загружаемым кодом
+    0 SWAP packBoot[ |2 SWAP EMIT>S EMIT>S  TRUE ]packBoot \ что-б ждал пыжика
+    1 PgEnd R> PgLoad
+    ;
+
 
 : 4>S ( u--)
     |4 
-    >R  >R  >R 
-                   EMIT>S
-            R> EMIT>S
-        R> EMIT>S
-    R> EMIT>S
+    SWAP 2SWAP SWAP
+    EMIT>S EMIT>S EMIT>S EMIT>S
     ;
-: VSBoot! ( VerSign adr --) \ выход из загрузчика по adr
-    NEW>S 
-        prgCMD01 EMIT>S 
-        [ {b fRst } ] LITERAL EMIT>S
-        2/ adrZ! \ адрес программы для записи сигнатуры
-        4>S \ данные=сигнатура
-        fprgWad 2on \ что-б не ждал пыжика
-        S@ Boot> \ отправка пакета
-    S>DROP 
-    ;    
-: _Boot! ( u -- )
+: setBoot ( u -- )
     4>S
-    fprgWad 2on \ что-б не ждал пыжика
-    S@ Boot> S>DROP \ отправка пакета
-    Boot!
+    FALSE ]packBoot \ что-б не ждал пыжика
+    PingBoot
     ;
 : SignBoot! ( VerSign -- ) \ загрузка групповая
     NEW>S prgVsig EMIT>S 
-    _Boot!
+    setBoot 
     ;
 : UIDBoot! ( UID -- ) \ загрузка индивидуальная
     NEW>S prgUID EMIT>S 
-    _Boot!
+    setBoot
     ;
+
+: inPage ( ofsW -- #Page) \ определить номер страницы
+    PAGESIZE / 
+    ;
+: [PagesBoot] ( ofsW u -- ) \ прогрузка отличных страниц
+    BEGIN
+        Discount \ отрезать совпадающие части
+        DUP 
+    WHILE
+        OVER inPage [PAGE] \ загрузить одну странице
+        OVER PAGESIZE MOD PAGESIZE SWAP - 
+        OVER MIN /STRING \ выровнять на начало следующей страницы
+    REPEAT 2DROP
+    ;    
+
+
+: [changeBoot] ( -- ) \ замена загрузчика
+    ." ========= смена загрузчика =========" CR 
+    copyBoot[
+        NewBoot (B>W) NewBootEnd (B>W) OVER -
+        [PagesBoot] \ загрузка нового загрузчика и копировщика
+        \ фиксация перехода на копировщик
+        0 SegA w@  \ стартовый вектор копировщика
+    ]copyBoot
+        0 FALSE SetStartVector \ стартовая страница
+        0 GoBoot \ запуск копирования
+        S" t700" fidext WRITE-LINE THROW
+    Img[ \ дубляж работы копировщика
+        NewBoot segA 0 segA PAGESIZEb cntPage *
+        MOVE
+    ]Img    
+    Msk[ \ отметить дубляж в маске 
+        0 SegA PAGESIZE cntPage * TRUE FILL
+    ]Msk
+    ;
+
+: BOOTer? ( -- f ) \ проверить  загрузчик
+    fNewBoot  @
+    ImgWender 
+    IF \ есть образ, сравнение областей, 
+\        1 SizeLoader (B>W) OVER - Discount \ исключая стартовый вектор
+        ROM_FREE (B>W) SizeLoader (B>W) OVER - Discount \ исключая векторное поле
+        NIP 0>
+        OR
+    THEN    
+    ;
+
+: checkOut ( -- ) \ проверка на корректность 
+    \ преобразования старой прошивки в новую
+    0 wender ImgWender MIN (B>W) 
+    Discount ABORT" Преобразование НЕ корректно!!!"
+    DROP
+    ;
+
+: SignBoot ( VerSign -- )
+    DUP VSign = 
+    IF ." Загрузка не требуется" DROP CR 
+    ELSE
+        DUP SignBoot!
+        DUP FindImgBoot 
+        CreateNewDext TO fidext
+        ['] Boot>f IS Boot> \ перестройка вывода на файл сценария
+        \ фиксировать режим записи
+        VectBoot bVec  FALSE SetStartVector
+        \ проверить загрузчик
+        BOOTer? IF [changeBoot] THEN
+        \ прогрузка страниц
+        EndBootWad (B>W) wender (B>W) OVER -
+            [PagesBoot]
+        \ стартовая страница
+        0 SegA w@ 0 TRUE SetStartVector \ стартовая страница
+        0 Wrd2Imd \ стартовый вектор, прямое дублирование (для прохождения проверки)
+        0 ROM_FREE [PagesBoot] \ векторное поле, это нужно если поле больше страницы
+        0 GoBoot
+        checkOut \ проверка перед записью
+        \ переставить вывод на печать или программирование
+        linkDev IF ['] xBoot> ELSE ['] Boot>. THEN IS Boot>
+        \ начать читать сценарий с начала
+        0 S>D fidext REPOSITION-FILE THROW
+        fidext PlayDext \ прошивка или печать
+        fidext CLOSE-FILE THROW 0 TO fidext
+        CR ." =========" ."  Загрузка завершена " ." =========" 
+    THEN
+    CR
+    ;
+
+\ запрос сигнатуры текущего устройства
+#def Sign? sr[ cVID cPID all :dest Signature 4 ]>>
+\ #def Sign? sr[ cVID cPID 0 :dest Signature 4 ]>>
+
+: Boot ( -- ) \ загрузка
+    0 TO OldSig
+    Sign? \ запросить сигнатуру
+    100 PAUSE
+    \ ждать ответа 1 секунду
+    getMs 1000 + \ засечь время
+    begin \ контроль времени ожидания
+        getMs OVER  > ABORT" нет ответа сигнатуры"
+        OldSig \ 0= \ проверить получение
+        2 PAUSE
+    until DROP
+    OldSig SignBoot
+    ;
+
+
+WARNING @
+    WARNING OFF
+    : lAP ( adr u --) \ локальный анализатор пакетов 
+        \ поймать сигнатуру прошивки
+        ?dup 
+        if  OVER c@ 4 / sDtPac =
+            if 2DUP OVER c@ 3 AND 2+ /STRING \ a->nofs
+                OVER NOFS@ NIP Signature =
+                IF 2 /STRING OVER @ TO OldSig ." Сигнатура в чипе: " OldSig .HEX CR THEN
+                2DROP
+            then
+            lAP
+        else drop 
+        then ;
+    ' lAP IS toolpack
+
+    : lAP ( adr u --) \ локальный анализатор пакетов 
+        \ поймать пыжик программирования
+        ?dup 
+        if  OVER c@ prgCMD01 =
+            if  2DROP \ пакеты программирования не показывать
+            else OVER C@ prgWad  ( 0xe8) =
+                if fprgWad 2! \ отметить прием пыжа программирования
+                ELSE lAP \ дальше по цепочке lAP
+                then
+            then
+        else drop 
+        then ;
+    ' lAP IS toolpack
+WARNING !
+
+CR
+S" [33m" ESC>
+.( Подсказки:) CR
+.(      чтение сигнатуры: Sign? ) CR 
+CR
+.(      для перепрошивки: Boot ) CR
+.(      для обновления определенной сигнатуры: 0x) VSign .hex .( SignBoot ) CR
+defoltText CR

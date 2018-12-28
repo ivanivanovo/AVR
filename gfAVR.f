@@ -158,7 +158,8 @@ CHAR / CurDir COUNT + C! CurDir COUNT 1+ SWAP 1- C! \ закрыть его сл
 : with ( adr u  --) \ добавить путь поиска к остальным
     fpath also-path
     ;
-
+    CurDir COUNT with
+    
     CurDir COUNT TUCK S" beq/" SEARCH 
     [IF] \ проект beq/ 
         NIP - RootPoint C! 
