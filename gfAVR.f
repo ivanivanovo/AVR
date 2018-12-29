@@ -208,7 +208,7 @@ defer coder
     BEGIN REFILL 0= UNTIL
     POSTPONE \
     ;
-
+: boot S" gboot" EVALUATE ;
 \ : VECT ( "name"--) CREATE ['] ABORT , DOES> @ EXECUTE ; === не сделано :(
 
 \ WARNING ON
