@@ -2,11 +2,17 @@
 [NOT?] ESC> [IF] S" console_codes.f" INCLUDED [THEN]
 [NOT?] 2VARIABLE [IF] S" lib/include/double.f" INCLUDED [THEN]
 
-4 CONSTANT WDatMax \ максимальный размер пакета данных, в словах
+4 CONSTANT WDatMax  \ максимальный размер пакета данных, в словах
 2VARIABLE fprgWad   \ adr u полученного пыжа, u используется как флаг
 VARIABLE fNewBoot   \ флаг необходимости сменить загрузчик 
-0 VALUE fidext \ fileid файла сценария
-0 VALUE OldSig \ старая сигнатура
+0 VALUE fidext      \ fileid файла сценария
+0 VALUE OldSig      \ старая сигнатура
+[NOT?] LastBoot [IF] 0 CONSTANT LastBoot [THEN]   \ адрес перехода после загрузки
+
+\ из-за ATtiny441-841 у которых стирается сразу 4 страницы
+\ придеться проверять размеры и брать в работу больший из них
+\ max CONSTANT (PAGESIZE) \ Words
+\ загрузчик в чипе тоже должен это проверять и учитывать
 \ ==================== либы ==========================================================
 
 \ =============== система программирования ===================================
@@ -25,7 +31,7 @@ CONSTANT StructPrg
 
 
 DEFER Boot> ( adr u --) \ отправка пакета
-\ ' xBoot> IS Boot> \ по умолчанию используется из iwLink.fs
+\ ' xBoot> IS Boot> \ по умолчанию используется из iwLink.f
 \ ' Boot>. IS Boot> \ для тестирования протокола программирования
 {b fVec } CONSTANT bVec
 {b fRst } CONSTANT bRst
@@ -123,17 +129,24 @@ DEFER Boot> ( adr u --) \ отправка пакета
     FALSE ]packBoot \ что-б не ждал пыжика
     ;    
 
+FLASHEND 1+     CONSTANT FlashSize  \ размер памяти в словах
+FlashSize (W>B) CONSTANT FlashSizeB \ размер памяти в байтах
 
-0 1 KB createSeg: Img-SEG \ сегмент образа прошивки чипа
+FlashSizeB DUP createSeg: Img-SEG \ сегмент образа прошивки чипа
 : Img[ SAVE-SEGMENT Img-SEG TO SEG ;
 : ]Img RESTORE-SEGMENT ;
 : ImgWender ( -- b) Img[ wender ]Img ;
+: clrImg Img[ 0 SegA SEG-SIZE @ TRUE FILL ]Img ; \ очистить образ
+clrImg \ очистить образ
 
-0 1 KB createSeg: Msk-SEG \ сегмент маски образа
+FlashSize DUP createSeg: Msk-SEG \ сегмент маски образа
+\ Один байт маски соответствует одному слову в образе
 \ если по смещению (в словах) в маске FALSE - данных в образе нет
 \ если по смещению (в словах) в маске TRUE  - данным в образе можно верить
 : Msk[ SAVE-SEGMENT Msk-SEG TO SEG ;
-: ]MSK RESTORE-SEGMENT ;
+: ]Msk RESTORE-SEGMENT ;
+: clrMsk Msk[ 0 SegA SEG-SIZE @ FALSE FILL ]Msk ; \ очистить маску
+clrMsk \ очистить маску
 
 : Discount ( ofsW u -- ofsW' u') \ сравнить текущий сегмент с образом
     \ ofsW' u' остаток строки с первым не совпадающим словом в начале
@@ -156,12 +169,11 @@ DEFER Boot> ( adr u --) \ отправка пакета
     Pref >S 2 HEX[ ,R ]HEX +>S Suff +>S 0 EMIT>S S@
     R/O OPEN-FILE 
     if DROP Img[ 0 Seg-wender ! ]Img \ образа нет, прямая загрузка
-       Msk[ 0 SegA SEG-SIZE @ FALSE FILL ]Msk \ очистить маску
+      clrMsk \ очистить маску
     else \ есть образ, разностная загрузка
         CLOSE-FILE THROW
         Img[ S@ LOAD-AS-HEX wender (B>W) 1- ]Img
-        Msk[ DUP org TRUE C>SEG \ расширить маску
-             0 SegA SWAP TRUE FILL \ заполнить маску
+        Msk[ 0 SegA SWAP TRUE FILL \ заполнить маску
             ]Msk 
     then S>DROP
     ;
@@ -211,11 +223,11 @@ SizePackLine ALLOCATE THROW CONSTANT packLine \ приемная строка п
 
 : PgBegin ( ofsW -- ofsW0 u) \ выравнивает смещение на начало страницы
     \ u - слов до ofsW
-    PAGESIZE /mod  PAGESIZE * SWAP
+    (PAGESIZE) /mod  (PAGESIZE) * SWAP
     ;
 : PgEnd ( ofsW -- ofsW u) \ слов до конца страницы
     DUP
-    PgBegin NIP PAGESIZE SWAP - 
+    PgBegin NIP (PAGESIZE) SWAP - 
     ;
 
 
@@ -264,7 +276,7 @@ FALSE VALUE pseudo \ флаг псевдозаписи
                 Word>S  \ дополнить пакет
                 OVER Wrd2Imd \ заменить слово в образе
                 1 /STRING \ ofs u
-                OVER PAGESIZE mod  0= IF cmdA C@ bWrt OR cmdA C! THEN
+                OVER (PAGESIZE) mod  0= IF cmdA C@ bWrt OR cmdA C! THEN
                 OVER getWord  \ ofs u w c
                 cmdA C@ = \ ofs u w f
                 >R OVER R> AND 0= \ выполнять пока не измениться команда 
@@ -279,13 +291,13 @@ FALSE VALUE pseudo \ флаг псевдозаписи
             /STRING RECURSE 
         THEN 
     ;
-: PgLoad ( ofsW u f-- ) \ загрузка одной страницы, u<=PageSize
+: PgLoad ( ofsW u f-- ) \ загрузка одной страницы, u<=(PageSize)
     0= TO pseudo
     (PgLoad) 2DROP
     ;
 
 : [Page] ( #Page -- ) \ запись целой страницы
-    PAGESIZE *  PAGESIZE \ ofsW u
+    (PAGESIZE) *  (PAGESIZE) \ ofsW u
     TRUE PgLoad
     ;
 
@@ -318,7 +330,7 @@ FALSE VALUE pseudo \ флаг псевдозаписи
     ;
 
 : inPage ( ofsW -- #Page) \ определить номер страницы
-    PAGESIZE / 
+    (PAGESIZE) / 
     ;
 : [PagesBoot] ( ofsW u -- ) \ прогрузка отличных страниц
     BEGIN
@@ -326,7 +338,7 @@ FALSE VALUE pseudo \ флаг псевдозаписи
         DUP 
     WHILE
         OVER inPage [PAGE] \ загрузить одну странице
-        OVER PAGESIZE MOD PAGESIZE SWAP - 
+        OVER (PAGESIZE) MOD (PAGESIZE) SWAP - 
         OVER MIN /STRING \ выровнять на начало следующей страницы
     REPEAT 2DROP
     ;    
@@ -337,18 +349,15 @@ FALSE VALUE pseudo \ флаг псевдозаписи
     copyBoot[
         NewBoot (B>W) NewBootEnd (B>W) OVER -
         [PagesBoot] \ загрузка нового загрузчика и копировщика
-        \ фиксация перехода на копировщик
-        0 SegA w@  \ стартовый вектор копировщика
     ]copyBoot
-        0 FALSE SetStartVector \ стартовая страница
-        0 GoBoot \ запуск копирования
-        S" t700" fidext WRITE-LINE THROW
+        copyBoot GoBoot \ запуск копирования
+        S" t1000" fidext WRITE-LINE THROW
     Img[ \ дубляж работы копировщика
-        NewBoot segA 0 segA PAGESIZEb cntPage *
+        NewBoot segA 0 segA (PAGESIZE) (W>B) cntPage *
         MOVE
     ]Img    
     Msk[ \ отметить дубляж в маске 
-        0 SegA PAGESIZE cntPage * TRUE FILL
+        0 SegA (PAGESIZE) cntPage * TRUE FILL
     ]Msk
     ;
 
@@ -356,10 +365,17 @@ FALSE VALUE pseudo \ флаг псевдозаписи
     fNewBoot  @
     ImgWender 
     IF \ есть образ, сравнение областей, 
-\        1 SizeLoader (B>W) OVER - Discount \ исключая стартовый вектор
         ROM_FREE (B>W) SizeLoader (B>W) OVER - Discount \ исключая векторное поле
         NIP 0>
         OR
+    ELSE \ образ неизвестен
+        fNewBoot  @ 0=
+        IF  \ если загрузчик менять не нужно
+            \ скопировать его в образ
+            FALSE TO pseudo
+            EndBootWad (B>W)  ROM_FREE (B>W)
+            DO I Wrd2Imd LOOP
+        THEN
     THEN    
     ;
 
@@ -374,7 +390,7 @@ FALSE VALUE pseudo \ флаг псевдозаписи
     DUP VSign = 
     IF ." Загрузка не требуется" DROP CR 
     ELSE
-        DUP SignBoot!
+        DUP SignBoot! \ завис примерно 0,5 сек
         DUP FindImgBoot 
         CreateNewDext TO fidext
         ['] Boot>f IS Boot> \ перестройка вывода на файл сценария
@@ -389,7 +405,7 @@ FALSE VALUE pseudo \ флаг псевдозаписи
         0 SegA w@ 0 TRUE SetStartVector \ стартовая страница
         0 Wrd2Imd \ стартовый вектор, прямое дублирование (для прохождения проверки)
         0 ROM_FREE [PagesBoot] \ векторное поле, это нужно если поле больше страницы
-        0 GoBoot
+        LastBoot GoBoot \ переход после загрузки
         checkOut \ проверка перед записью
         \ переставить вывод на печать или программирование
         linkDev IF ['] xBoot> ELSE ['] Boot>. THEN IS Boot>
@@ -403,7 +419,7 @@ FALSE VALUE pseudo \ флаг псевдозаписи
     ;
 
 \ запрос сигнатуры текущего устройства
-#def Sign? sr[ cVID cPID all :dest Signature 4 ]>>
+#def Sign? r[ cVID cPID all :dest Signature 4 ]>>
 \ #def Sign? sr[ cVID cPID 0 :dest Signature 4 ]>>
 
 : Boot ( -- ) \ загрузка
@@ -426,7 +442,7 @@ WARNING @
     : lAP ( adr u --) \ локальный анализатор пакетов 
         \ поймать сигнатуру прошивки
         ?dup 
-        if  OVER c@ 4 / sDtPac =
+        if  OVER c@ 4 / DtPac =
             if 2DUP OVER c@ 3 AND 2+ /STRING \ a->nofs
                 OVER NOFS@ NIP Signature =
                 IF 2 /STRING OVER @ TO OldSig ." Сигнатура в чипе: " OldSig .HEX CR THEN
@@ -441,6 +457,7 @@ WARNING @
         \ поймать пыжик программирования
         ?dup 
         if  OVER c@ prgCMD01 =
+\            if  Boot>. \ пакеты программирования показывать
             if  2DROP \ пакеты программирования не показывать
             else OVER C@ prgWad  ( 0xe8) =
                 if fprgWad 2! \ отметить прием пыжа программирования
@@ -460,3 +477,5 @@ CR
 .(      для перепрошивки: Boot ) CR
 .(      для обновления определенной сигнатуры: 0x) VSign .hex .( SignBoot ) CR
 defoltText CR
+
+

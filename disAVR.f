@@ -221,27 +221,17 @@ PozLabel SizeAreaLabel + VALUE PozMnemo
     ; 
 
 : val? ( val -- ) \ показать определение
-    ROM[
         Val_ DROP
         CR \ после участка кода идёт пустая строка, как визуальный разделитель
-    ]ROM
     ;
 : vectors? ( -- ) \ распечатать поле векторов прерываний
-    ROM[ 0 val? ]ROM
+    0 val?
     ;
-\ : WATH? ( <name> -- ) \ опознать name и распечатать
-\     \ искать имя во всех сегментах
-\     name>label ?DUP
-\     IF  label-value @ val?
-\     ELSE ." Нет такой метки в " ?seg ." ."
-\     THEN
-\     ;
+
 : [LIST] ( val1 valLast -- ) \ дизассемблировать от val1 до valLast
-     ROM[   
         SWAP
         BEGIN Val_ 2DUP > \ пока не добрались до valLast
         WHILE CR REPEAT 2DROP
-    ]ROM 
 
     ;
 : LISTING ( --) \ дизассемблировать всё

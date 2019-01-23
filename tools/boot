@@ -1,8 +1,10 @@
-REQUIRE Boot BootLoader.f
+REQUIRE SignBoot BootLoader.f
+1000 PAUSE
 :NONAME \ (boot)
     ShowPack @
     ShowPack Off
-    ['] Boot CATCH SWAP ShowPack ! 
+    ['] Boot CATCH 
+    SWAP ShowPack ! 
     THROW
     ; 
 EXECUTE ( boot)

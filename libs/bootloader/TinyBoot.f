@@ -1,6 +1,6 @@
 \ BootLoader
 \ без привязки к системе связи
-REQUIRE prgCMD01 iwcmd.fs
+REQUIRE prgCMD01 iwcmd.f
 \ нужно объявить буферы приема и предачи 
 \ #def inBoot  iwFifoIn \ буфер из которого загрузчик читает пакеты
 \ #def outBoot iwFifOut \ буфер куда загрузчик пишет пакеты
@@ -8,6 +8,26 @@ REQUIRE prgCMD01 iwcmd.fs
 \ #def iniSysLink iwIni \ инициализация буферов и связи
 \ #def BootPac> iwTransmitter \ подпрограмма передачи
 \ #def StopInt rcall KillDog \ остановка лишних прерываний
+
+\ из-за ATtiny441-841 у которых стирается сразу 4 страницы
+\ придеться проверять размеры и брать в работу больший из них
+[FOUND?] ERASESIZE 
+[IF]   ERASESIZE PAGESIZE < [IF] .( Караул, ERASESIZE меньше чем PAGESIZE!) CR BYE [THEN]
+       ERASESIZE
+       RAM[ 
+        finger 
+            ERASESIZE take pageRAM \ временная страница в памяти
+        org \ вернем указатель на место, чтоб bufRAM не крал ОЗУ у основной программы
+       ]RAM
+[ELSE] PAGESIZE 
+[THEN] CONSTANT (PAGESIZE) \ Words
+\ загрузчик в чипе тоже должен это проверять и учитывать
+\ 1 организовать в RAM виртуальную страницу 
+\ 2 принимать данные и помещать их не в буфер записи, а в RAM
+\ 3 дать команду на стирание
+\ 4 записать данные из RAM постаранично во flash
+\ ...
+
 
 finger constant StartBoot \ маркер начала библиотеки загрузчика
 
@@ -32,6 +52,8 @@ BitsIn r0 ( aka SPMCSR)
 
 \ !!!!!!!!!!!!!!! критическое место !!!!!!!!!!!!!!!!
 finger CONSTANT crtBootA
+[NOT?] pageRAM
+[IF]    \ обычная страница
         code do_WP ( Z=addrPage -- r=action Z=addrPage )
             \ прерывания должны быть уже запрещены!!!
                 ldi r,{b PGERS SPMEN } 
@@ -45,6 +67,36 @@ finger CONSTANT crtBootA
             begin mov r0,SPMCSR wait_nb rSPMEN 
             ret c; \ do_SPM val?
 finger _wp org c[ rcall do_SPM ]c org
+[ELSE]  \ виртуальная, временная страница в ОЗУ
+        code do_SPM ( r=action Z=addr r0:r1=data -- r=action Z=addr r0:r1=x)
+            \ пишем два байта в ОЗУ
+            mov r,zL andi r,(PAGESIZE) 2* 1- \ r=адрес байта внутри страницы
+            ldiW X,pageRAM add xL,r clr r adc xH,r
+            st X+,r0  st X,r1  \ пишем два байта в ОЗУ 
+            ret c;
+        code Go_SPM ( r=action Z=addr r0:r1=data -- r=action Z=addr r0:r1=x) 
+            \ выполнить инструкцию SPM
+            mov SPMCSR,r  SPM
+            begin mov r0,SPMCSR wait_nb rSPMEN 
+            ret c;
+        code do_WP ( Z=addrPage -- r=action Z=addrPage )
+            ldi r,{b PGERS SPMEN } rcall Go_SPM \ стереть страницы
+            andi zL,(PAGESIZE) 2* 1- INVERT (LB) \ Z->начало ErazedPage
+            ldiW X,pageRAM \ X->pageRam
+            ldi ii,(PAGESIZE) PAGESIZE / \ сколько записывамых страниц в стираемых
+            for \ запись нескольких реальных страниц
+                ldi rH,PAGESIZE
+                begin ld r0,X+ ld r1,X+
+                    ldi r,{b SPMEN } rcall Go_SPM \ записать слово в страницу 
+                    dec rH
+                while
+                    adiW Z,2
+                repeat 
+                ldi r,{b PGWRT SPMEN } rcall Go_SPM \ записать текущую страницу 
+                adiW Z,2 \ Z->начало следующей страницы
+            next ii
+            ret c;    
+[THEN]
 \ !!!!!!!!!!!!!!! критическое место !!!!!!!!!!!!!!!!
 finger CONSTANT crtBootB
 
@@ -71,6 +123,7 @@ ldZ:    ldZPrgWad rcall Flash2RAM
 code >BootPac ( -- ) \ обработка входящих пакетов программатора
     ldiW Y,inBoot rcall RsizeBufP if0 ret then
     rcall RaddrBufP \ получить адрес пакета
+[FOUND?] PreBoot [IF] PreBoot [THEN]   
     ldd rH,y+(sx) \ получить семафор
     cpi rH,prgCMD01
     if= ldd rH,y+(cmd) \ cmd
@@ -123,10 +176,9 @@ code BootLoader
         rcall BootPac>  \ проверить и запустить передачу
     again
     c;   \ val?
-0  VECTOR> iniBoot
-
+0  VECTOR> iniBoot \ стартовый вектор сейчас указывает на загрузчик
  finger
-    0 SegA W@ TO VectBoot \ получить стартовый вектор
+    0 SegA W@ TO VectBoot \ получить стартовый вектор ("rjmp iniBoot")
     mVect org  Vect->X  \ поместить в код
  org
 
@@ -151,7 +203,6 @@ org
 \ (prgWad) HEX[ val? ]HEX
 
 FUSE{ SELFPRGEN }=0 \ разрешить самопрограммирование
-PAGESIZE 2* CONSTANT PAGESIZEb \ размер страницы в байтах
 
 \ Запомнить вектора для загрузчика
 ROM_FREE DUP createSeg: BOOT-SEG
@@ -161,7 +212,7 @@ ROM_FREE DUP createSeg: BOOT-SEG
     CMOVE       \ скопировать
 
 \ SigLoader .hex .( <--SigLoader) cr
-S" copyBoot.fs"     INCLUDED \ на случай смены старого загрузчика, запись идет в отдельный сегмент
+S" copyBoot.f"     INCLUDED \ на случай смены старого загрузчика, запись идет в отдельный сегмент
  \ SizeBoot . .( <==== размер чисто загрузчика) cr 
  \ SizeLoader sizePrgWad + . .( <==== полный размер загрузчика) cr
 

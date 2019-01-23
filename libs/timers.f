@@ -38,7 +38,7 @@ BitsIn r ( aka TIFR0)
     DUP 0xFFFF > ABORT" Слишком большой период." 
     ;
 
-code Time \ вызывать переодически в главном цикле
+code Time \ вызывать периодически в главном цикле
     mov r,TIFR0 skip_b rOCF0A ret
     \ сработал флаг основного периода таймера
     mov r,NextTimer inc r mov rH,r
@@ -90,11 +90,11 @@ code Delay: ( X=delay R:adr -- ) \ запомнить задержку и адр
     then
     ret c; 
 
+\eof \ примеры использования
 finger startTimres - .
 .( <==== размер timres.f ) cr
 
 
-\eof \ примеры использования
 code WaitGoodMorning \ пример однократного срабатывания
     ldiW X,4 sek rcall Delay: \ объявление времени таймера
     \ сюда будет переход по срабатыванию таймера

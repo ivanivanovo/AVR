@@ -36,6 +36,9 @@
 \ RendBufP  ( Y=addrBuf          -- Y=addrBuf)                  \ переместить индекс R за пакет
 \ WtakeBuf  ( Y=addrBuf r=u      -- Y=addrPack|Buf r=u t )      \ зарезервировать для прямой записи u байт ДАННЫХ в буфере addrBuf
 
+\ 12.10.2018 
+\ Введена защита от переноса W из-за пустого пакета.
+
 #def BufP  \ либа загружена
 Finger VALUE StartLibBufP \ учет размера кода  
 \ ==== макросы =============================
@@ -49,13 +52,15 @@ Finger VALUE StartLibBufP \ учет размера кода
 #def (Wi) 2 \ смещение индекса от начала буфера
 #def (Dt) 3 \ смещение данных  от начала буфера
 
-
+#def TailSize ( size -- TailSize )  MaxSizePack MIN
+\ размер хвоста не больше максимального пакета
+\ и не больше основного тела
 : BufP: ( size "name"  --) \ выделить память под пакетный буфер
-    MaxSizePack + 3 + take \ +хвост +3 байта под индексы S, R, W 
+    DUP TailSize + 3 + take \ +хвост +3 байта под индексы S, R, W 
     ;
 
 code IniBufP ( Y=addrBuf r=Size -- Y=addrBuf r=Size ) \ инициация буфера
-    st Y,r  std Y+(Ri),(0)  std Y+(Wi),(0) \ очистить и образмерить
+    st Y,r  std Y+(Ri),(0)  std Y+(Wi),(0) std Y+(Dt),(0) \ очистить и образмерить
     ret c;
 
 
@@ -139,16 +144,20 @@ code ReadBufP ( Y=addrBuf  rH=n -- Y=addrBuf rH=n r=byte t c )
 code _endBufP ( r=Idx -- r=Idx')
     push rH
         add_Yr  ldd rH,Y+(Dt)  sub_Yr \ rH=n r=Idx  Y=addrBuf
-        add r,rH \ Idx+N=x
-        ldd rH,Y+(Sz) dec rH \ rH=максимальный индекс (maxIdx=Size-1)
-        cp r,rH \ (x-maxIdx)
-        if_c inc r else sub r,rH then
+        tst rH
+        if_nZ \ защита от пустого пакета
+            add r,rH \ Idx+N=x
+            ldd rH,Y+(Sz) dec rH \ rH=максимальный индекс (maxIdx=Size-1)
+            cp r,rH \ (x-maxIdx)
+            if_c inc r else sub r,rH then
+        then
     pop rH 
     ret c; 
 
 code WendBufP ( Y=addrBuf -- Y=addrBuf )  \ переместить индекс W за пакет
     push r 
         ldd r,Y+(Wi) rcall _endBufP
+        add_Yr  std Y+(Dt),(0) sub_Yr \ n'=0
         std Y+(Wi),r \ r=W'
     pop r
     ret c; \ WendBufP val?
@@ -163,3 +172,4 @@ code RendBufP ( Y=addrBuf -- Y=addrBuf )  \ переместить индекс 
 
 \eof
 finger StartLibBufP - . .( <==== размер либы pFIFO[кольцевого+]) cr
+

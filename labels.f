@@ -239,4 +239,23 @@ VARIABLE last-label
          LOCK[ labels-map ]LOCK
     ;
 
+VARIABLE preLabel
+: sizeof ( n -- u) \ определить размер кода или данных
+\ n - значение метки
+\ u - размер в байтах
+    0 preLabel !
+    labels 
+    BEGIN @ DUP WHILE ( n adr')
+        2DUP label-value @ = 
+        IF DROP preLabel @ 
+            ?DUP if label-value @ else finger then
+            SWAP - EXIT 
+        ELSE \ проход по списку до совпадения  
+            DUP label-type @ 
+                DUP  CodeType =
+                SWAP DataType = OR
+            IF  DUP preLabel ! THEN
+        THEN 
+    REPEAT  NIP
+    ;
     

@@ -7,74 +7,86 @@
 \ передать управление копировщику
 \ передать управление новому загрузчику 
 
+\ Возможно, что для поддержания чипа во включенном состоянии,
+\ потребуется установить пины в определенное состояние.
+\ Для этого нужно определить процедуру:
+\ setPins \ которая выполнит эту работу после сброса.
+\ Если такой потребности нет, то ее все равно нужно явно определить:
+\ #def setPins \ пусто 
 
 \ создать сегмент для копии
+\ из-за ATtiny441-841 у которых стирается сразу 4 страницы
+\ придеться различать размеры стираемой и записываемой страниц
+ PAGESIZE  2* CONSTANT PAGESIZEb   \ размер записываемых страницы в байтах
+(PAGESIZE) 2* CONSTANT (PAGESIZEb) \ размер стираемых страниц в байтах
+
 FLASHEND 1+ 2* CONSTANT SizeFlashB
 SizeFlashB DUP createSeg: copyBOOT-SEG
 : copyBoot[ SAVE-SEGMENT copyBOOT-SEG TO SEG ;
 : ]copyBoot RESTORE-SEGMENT ;
 
 copyBoot[ \ сделать сегмент текущим 
-0 segA SizeFlashB 0xFF fill \ заполнить сегмент 0xFF
+    0 segA SizeFlashB 0xFF fill \ заполнить сегмент 0xFF
 
-SizeFlashB 2/ VALUE NewBoot \ пометить начало загружаемой области
-ROM[ finger ]ROM CONSTANT ROMfinger
-\ сделать копию
-ROM[ 0 segA ]ROM NewBoot segA ROMfinger MOVE
-ROMfinger PAGESIZEb /mod SWAP [IF] 1+ [THEN] CONSTANT cntPage \ количество страниц для записи
+    SizeFlashB 2/ VALUE NewBoot \ пометить начало загружаемой области
+    ROM[ finger ]ROM CONSTANT ROMfinger
+    \ сделать копию
+    ROM[ 0 segA ]ROM NewBoot segA ROMfinger MOVE
+    ROMfinger (PAGESIZEb) /mod SWAP [IF] 1+ [THEN] CONSTANT cntPage \ количество стираемых страниц для перезаписи
 
-ROMfinger NewBoot + \ конец занятой области
-org \ отсюда и начнем дозапись кода копировщика
+    ROMfinger NewBoot + \ конец занятой области
+    ORG \ отсюда и начнем дозапись кода копировщика
 
-#def wrdL    r0     \ младший байт слова для LPM-SPM
-#def wrdH    r1     \ старший байт слова для LPM-SPM
-#def iWords  r16    \ счетчик слов
-#def iPage   r17    \ счетчик страниц
-#def WPsizeB r18 ( +r19) \ константа (2байта), количество байт на странице
+    #def wrdL    r0      \ младший байт слова для LPM-SPM
+    #def wrdH    r1      \ старший байт слова для LPM-SPM
+    #def iWords  r16     \ счетчик слов
+    #def iPage   r17     \ счетчик страниц
+    #def (iPage) r18     \ счетчик стертых и записанных страниц
+    #def WPsizeB r19 ( +r20) \ константа (2байта), количество байт на записываемой странице
 
-\ =============================================================================
-\ =                      здесь начинается код копировщика                     =
-\ =============================================================================
-
-[NOT?] WDTCR [IF] #def WDTCR WDTCSR [THEN]
-finger CONSTANT BeginCopyr
-PAGESIZEb BeginCopyr + BeginCopyr PAGESIZEb mod - CONSTANT lastPgSRC
-\ копировщик пишет целое количество станиц
-\ поэтому в целевую область попадет часть копировщика, 
-\ дополняющая размер перемещяемого кода до целой страницы
-\ при дальнейшем програмиррование эта часть будет перезаписана
-code copyBoot ( --) \ копировщик
-    cli \ запретить прерывания
-    setPins \ настроить выходы на минимальную работу
-    \ скопировать данные из ROM в ROM, начиная с задних адресов
-    ldiW X,lastPgSRC  1-  \ X=задний адрес источника, 
-    ldiW Y,ROMfinger  1-  \ Y=целевой задний адрес 
-    ldiW WPsizeB,PAGESIZEb
-    ldi iPage,cntPage \ количество страниц для записи
-    for movW Z,X 
-            \ заполнение буфера
-            ldi iWords,PAGESIZE \ количество слов в буфере
-            for lpm wrdH,Z sbiW Z,1 lpm wrdL,Z  
-                ldi r,{b SPMEN }  mov SPMCSR,r  SPM 
-                sbiW Z,1
-            next iWords
-        movW X,Z
-        \ стереть и записать страницу
-        movW Z,Y 
+    \ =============================================================================
+    \ =                      здесь начинается код копировщика                     =
+    \ =============================================================================
+    \ копировщик пишет целое количество станиц
+    \ поэтому в целевую область попадет часть копировщика, 
+    \ дополняющая размер перемещяемого кода до целой страницы
+    \ при дальнейшем програмиррование эта часть будет перезаписана
+    code copyBoot ( --) \ копировщик
+        cli \ запретить прерывания
+        setPins \ настроить выходы на минимальную работу
+        \ скопировать данные из ROM в ROM, начиная с задних адресов
+        ldiW X,(PAGESIZEb) cntPage * NewBoot +  1-  \ X=задний адрес источника, последний байт последней стираемой страницы 
+        ldiW Y,(PAGESIZEb) cntPage *            1-  \ Y=целевой задний адрес    последний байт последней стираемой страницы
+        ldiW WPsizeB,PAGESIZEb
+        ldi (iPage),cntPage \ количество стираемых страниц для перезаписи
+        for movW Z,Y
+            \ стереть n страниц
             ldi r,{b PGERS SPMEN } mov SPMCSR,r  SPM 
-            ldi r,{b PGWRT SPMEN } mov SPMCSR,r  SPM 
-        subW Y,WPsizeB 
-    next iPage
-    \ уйти в новый загрузчик
-    goto 0 
-    c;
-finger VALUE NewBootEnd
+            ldi iPage,(PAGESIZE) PAGESIZE / \ сколько записывамых страниц в стираемых
+            for movW Z,X \ записать n страниц
+                \ заполнение буфера
+                ldi iWords,PAGESIZE \ количество слов в буфере записи
+                for lpm wrdH,Z sbiW Z,1 lpm wrdL,Z  
+                    ldi r,{b SPMEN }  mov SPMCSR,r  SPM 
+                    sbiW Z,1
+                next iWords
+                movW X,Z
+                \ записать страницу
+                movW Z,Y 
+                    ldi r,{b PGWRT SPMEN } mov SPMCSR,r  SPM 
+                subW Y,WPsizeB 
+            next iPage
+        next (iPage)
+        c;
+        \ уйти в новый загрузчик
+[FOUND?] JMP finger 4096 < (OR) 
+[IF] \ если есть JMP ИЛИ rjmp<4096
+        c[ goto 0 ]c
+[ELSE]
+        c[ clrW Z  ijmp ]c
+[THEN]
+    finger VALUE NewBootEnd
 
-
-\ направить вектор сброса
-0 VECTOR> copyBoot
-\ HEX-save copy.hex
-
-\ NewBootEnd BeginCopyr - . .( размер копировщика) CR
+    \ NewBootEnd BeginCopyr - . .( размер копировщика) CR
 ]copyBoot \ вернуть рабочий сегмент
 

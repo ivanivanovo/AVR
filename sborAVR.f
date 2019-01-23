@@ -22,7 +22,7 @@ ALSO DASSM
     ;
 PREVIOUS  
 : NOADR ( )
-    TRUE ABORT" Неверный адрес." ;
+    TRUE ABORT" Неверный адрес, больше RAMEND." ;
 \ =====================================
 SAVE-VOCS ALSO DASSM DEFINITIONS
 \ нижеследующие слова будут работать только в режиме ассемблирования

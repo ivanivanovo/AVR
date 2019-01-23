@@ -61,7 +61,8 @@ libusb_device_descriptor ALLOCATE THROW VALUE DevDesc \ взяли память 
     \ u=число обнаруженных устройств
     ctx 0= 
     if (( &ctx )) libusb_init errorUSB 
-       (( ctx dbgLevel )) libusb_set_debug  \ включить отладочную информацию 
+\ TODO в spf оставляет на стеке ctx, в gforth не оставляет????????
+\       (( ctx dbgLevel )) libusb_set_debug  \ включить отладочную информацию 
     then
     (( ctx  &listDev )) libusb_get_device_list \ получить список всех устройств
     ;
