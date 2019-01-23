@@ -28,11 +28,13 @@ SizeFlashB DUP createSeg: copyBOOT-SEG
 copyBoot[ \ сделать сегмент текущим 
     0 segA SizeFlashB 0xFF fill \ заполнить сегмент 0xFF
 
-    SizeFlashB 2/ VALUE NewBoot \ пометить начало загружаемой области
     ROM[ finger ]ROM CONSTANT ROMfinger
+    ROMfinger (PAGESIZEb) /mod SWAP [IF] 1+ [THEN] CONSTANT cntPage \ количество стираемых страниц для перезаписи
+    \ пометить начало загружаемой области
+    \ выровнено на ближайшую страницу
+    (PAGESIZEb) cntPage * CONSTANT  NewBoot 
     \ сделать копию
     ROM[ 0 segA ]ROM NewBoot segA ROMfinger MOVE
-    ROMfinger (PAGESIZEb) /mod SWAP [IF] 1+ [THEN] CONSTANT cntPage \ количество стираемых страниц для перезаписи
 
     ROMfinger NewBoot + \ конец занятой области
     ORG \ отсюда и начнем дозапись кода копировщика

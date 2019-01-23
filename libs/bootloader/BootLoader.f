@@ -165,7 +165,7 @@ clrMsk \ очистить маску
     REPEAT
     ;
 
-: FindImgBoot ( VerSign -- ) \ поиск и загруза образа старой прошивки
+: FindImgBoot ( VSign -- ) \ поиск и загруза образа старой прошивки
     Pref >S 2 HEX[ ,R ]HEX +>S Suff +>S 0 EMIT>S S@
     R/O OPEN-FILE 
     if DROP Img[ 0 Seg-wender ! ]Img \ образа нет, прямая загрузка
@@ -178,7 +178,7 @@ clrMsk \ очистить маску
     then S>DROP
     ;
 
-: CreateNewDext ( VerSign -- fid ) \ поиск и загрузка сценария прошивки
+: CreateNewDext ( VSign -- fid ) \ поиск и загрузка сценария прошивки
     Pref >S 
         2 HEX[ ,R ]HEX +>S
             S" to" +>S
@@ -320,7 +320,7 @@ FALSE VALUE pseudo \ флаг псевдозаписи
     FALSE ]packBoot \ что-б не ждал пыжика
     PingBoot
     ;
-: SignBoot! ( VerSign -- ) \ загрузка групповая
+: SignBoot! ( VSign -- ) \ загрузка групповая
     NEW>S prgVsig EMIT>S 
     setBoot 
     ;
@@ -328,7 +328,9 @@ FALSE VALUE pseudo \ флаг псевдозаписи
     NEW>S prgUID EMIT>S 
     setBoot
     ;
-
+: GoBoot(VSign) ( adr --) \ переход по адресу с VSign в параметрах
+    (B>W) bRst packBoot[ VSign 4>S FALSE ]packBoot
+    ;
 : inPage ( ofsW -- #Page) \ определить номер страницы
     (PAGESIZE) / 
     ;
@@ -386,7 +388,7 @@ FALSE VALUE pseudo \ флаг псевдозаписи
     DROP
     ;
 
-: SignBoot ( VerSign -- )
+: SignBoot ( VSign -- )
     DUP VSign = 
     IF ." Загрузка не требуется" DROP CR 
     ELSE
@@ -405,7 +407,7 @@ FALSE VALUE pseudo \ флаг псевдозаписи
         0 SegA w@ 0 TRUE SetStartVector \ стартовая страница
         0 Wrd2Imd \ стартовый вектор, прямое дублирование (для прохождения проверки)
         0 ROM_FREE [PagesBoot] \ векторное поле, это нужно если поле больше страницы
-        LastBoot GoBoot \ переход после загрузки
+        LastBoot GoBoot(VSign) \ переход после загрузки
         checkOut \ проверка перед записью
         \ переставить вывод на печать или программирование
         linkDev IF ['] xBoot> ELSE ['] Boot>. THEN IS Boot>
@@ -420,7 +422,6 @@ FALSE VALUE pseudo \ флаг псевдозаписи
 
 \ запрос сигнатуры текущего устройства
 #def Sign? r[ cVID cPID all :dest Signature 4 ]>>
-\ #def Sign? sr[ cVID cPID 0 :dest Signature 4 ]>>
 
 : Boot ( -- ) \ загрузка
     0 TO OldSig

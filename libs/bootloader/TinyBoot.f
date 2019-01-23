@@ -214,5 +214,5 @@ ROM_FREE DUP createSeg: BOOT-SEG
 \ SigLoader .hex .( <--SigLoader) cr
 S" copyBoot.f"     INCLUDED \ на случай смены старого загрузчика, запись идет в отдельный сегмент
  \ SizeBoot . .( <==== размер чисто загрузчика) cr 
- \ SizeLoader sizePrgWad + . .( <==== полный размер загрузчика) cr
+  SizeLoader sizePrgWad + . .( <==== полный размер загрузчика) cr
 
