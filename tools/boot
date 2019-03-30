@@ -1,5 +1,5 @@
 REQUIRE SignBoot BootLoader.f
-1000 PAUSE
+\ 1000 PAUSE
 :NONAME \ (boot)
     ShowPack @
     ShowPack Off
@@ -8,4 +8,5 @@ REQUIRE SignBoot BootLoader.f
     THROW
     ; 
 EXECUTE ( boot)
+2000 PAUSE
 \ bye
