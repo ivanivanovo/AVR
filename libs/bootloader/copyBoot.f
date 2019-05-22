@@ -34,8 +34,7 @@ copyBoot[ \ сделать сегмент текущим
     \ выровнено на ближайшую страницу
     (PAGESIZEb) cntPage * CONSTANT  NewBoot 
     \ сделать копию
-    ROM[ 0 segA ]ROM NewBoot segA ROMfinger MOVE
-
+    ROM[ 0 segA ]ROM NewBoot segA ROMfinger CMOVE
     ROMfinger NewBoot + \ конец занятой области
     ORG \ отсюда и начнем дозапись кода копировщика
 
