@@ -10,11 +10,4 @@ USB программатор -22.09.2014 USBtiny; 6.1.2015 MKII_slim (PDI+ISP)
 мультизадачность - 26.04.2017 ("Машина времени для крошек" http://we.easyelectronics.ru/AVR/mashina-vremeni-dlya-kroshek.html)
 загрузчик -2017
  --------------------------------
-симулятор -
-forth8 -
-оптимизатор+сборщик мусора -
-forth16 -
-GUI -
-IDE -
-helper -
-языки -
+31.12.2019 - end

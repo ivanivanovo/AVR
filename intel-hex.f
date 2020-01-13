@@ -123,6 +123,14 @@ CREATE bstr len ALLOT   \ буфер для приема строки
     
 \ =========== ГЛАВНЫЕ СЛОВА ====================================================
 PREVIOUS DEFINITIONS ALSO INTEL-HEX
+: Hex2Bin ( c-adr u -- c-adr u/2) \ преобразование HEX-строки в бинарную
+    2/ 2DUP OVER SWAP
+    OVER + SWAP
+    ?DO \ c-adr'
+        2 HEX>число \ c-adr' n
+        I C!
+    LOOP DROP 
+    ;
 
 : LOAD-AS-HEX ( c-adr u -- )   
     \ загрузить файл с именем в c-adr u в текущий сегмент
